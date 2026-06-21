@@ -54,7 +54,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `1.5` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r5` · 2026-06-21 · this file is now served at `/ask.md` and mirrored to a public repo for sandboxed agents; added `/schema.json`. r4: `/ask` reframed to the full family (`questionnaire` + `prioritize`). r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r6` · 2026-06-21 · hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)): the only two block types, a "NOT block types" list of hallucinated tags, common mistakes, and a combined starter — the Markdown fence contract is now documented as strongly as the JSON one. r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -174,10 +174,60 @@ paste surface.
 
 ## 2. COMPONENT INDEX
 
-| § | Component | Tag | Choose it when you need the user to… |
+**There are exactly TWO renderable block types. This is the whole set:**
+
+| § | Component | Fence tag (the ONLY valid ones) | Choose it when you need the user to… |
 |---|---|---|---|
 | [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | pick from options, multi-select, or type a free-text answer |
 | [§4](#4-component-prioritize--order) | **Prioritize** | ` ```prioritize ` | rank / reorder a short list by priority |
+
+### 2.1 NOT block types — do not invent fence tags
+
+A fenced block whose info-string is anything other than the two above renders as a **plain code block,
+silently, with no error** — so a wrong tag looks like it "did nothing". None of these are real (a
+non-exhaustive list of tempting hallucinations):
+
+` ```multiple-choice ` · ` ```open-question ` · ` ```match ` · ` ```quiz ` · ` ```poll ` ·
+` ```survey ` · ` ```form ` · ` ```rank ` · ` ```question ` · ` ```answer ` — **and anything else.**
+The renderer knows only `questionnaire` and `prioritize`.
+
+### 2.2 Common mistakes
+
+- **Question *types* are MODES inside one ` ```questionnaire ` block — not separate blocks.**
+  Single-select, multi-select (`multi: true`), and free-text (`options: []`) are the same question shape,
+  listed together in the one `questions` array. **Do not** create separate fenced blocks for "multiple
+  choice", "open question", or "matching" — every question, of any mode, goes inside the single
+  `questionnaire` block. (See [§3.2 Question modes](#32-question-modes).)
+- **Ranking is the separate ` ```prioritize ` component**, not a question mode. Everything a user
+  *chooses* is a questionnaire question; the one thing they *order* is prioritize.
+- **One info-string, lowercase, nothing after it** — the opening fence is exactly ` ```questionnaire ` or
+  ` ```prioritize ` on its own line.
+
+### 2.3 Copy-paste starter — prose + one prioritize + one questionnaire
+
+A single document mixing prose with both block types. Renders top-to-bottom: a line of prose, a draggable
+priority list, then a three-question form (single-select with a recommended badge, a multi-select, and a
+free-text field).
+
+````markdown
+Here's the Q3 plan. Rank the regions, then answer the two open calls.
+
+```prioritize
+{ "version": "1", "items": [
+  { "id": "eu", "label": "EU" },
+  { "id": "us", "label": "US" },
+  { "id": "apac", "label": "APAC" }
+] }
+```
+
+```questionnaire
+{ "version": "1", "questions": [
+  { "id": "q1", "question": "Which auth method?", "options": ["PIN", "Room number", "Magic link"], "recommended": "Magic link" },
+  { "id": "q2", "question": "Which regions need localization first?", "multi": true, "options": ["EU", "US", "APAC"] },
+  { "id": "q3", "question": "Target launch date?", "options": [], "open_field": { "label": "Target date:" } }
+] }
+```
+````
 
 ---
 
