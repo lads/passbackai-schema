@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://passbackai.com/schema.json",
+  "title": "PassbackAI interactive components",
+  "description": "JSON Schema for the interactive components PassbackAI renders inside a pasted Markdown document. Each component is the bare JSON object inside its own fenced block (```questionnaire or ```prioritize). A payload validates against exactly one component. The human-readable spec is https://passbackai.com/ask and the raw Markdown is https://passbackai.com/ask.md — this file is generated to match them and updated in the same commit.",
+  "$comment": "Spec revision r5 (2026-06-21). Wire `version` is the string \"1\" for every component; `skill_version` is unrelated authoring-build metadata. Some guards the renderer enforces cannot be expressed in JSON Schema and are noted in `description` fields: (a) questionnaire question ids should be unique — duplicates are not rejected but collide answer state; (b) prioritize item ids MUST be unique — a duplicate rejects the block; (c) `recommended` and `routing.return_prompt` cross-field rules. Validate structure here, then consult /ask.md for the full guard list.",
+  "oneOf": [
+    { "$ref": "#/$defs/questionnaire" },
+    { "$ref": "#/$defs/prioritize" }
+  ],
+  "$defs": {
+    "routing": {
+      "type": "object",
+      "description": "Include only when the document is sent to someone else. `return_prompt` should contain the literal value of `from` so the renderer can bold the name.",
+      "required": ["from", "return_prompt"],
+      "properties": {
+        "from": { "type": "string", "minLength": 1 },
+        "return_prompt": { "type": "string" }
+      }
+    },
+    "questionnaire": {
+      "type": "object",
+      "title": "Questionnaire (verb: choose)",
+      "description": "A list of questions; each is a single/multi-select or a pure free-text field. Embedded as a ```questionnaire fence, or pasted as a bare JSON object on its own.",
+      "required": ["version", "questions"],
+      "properties": {
+        "version": { "const": "1", "description": "The wire schema version. Always the string \"1\" — the number 1 is rejected." },
+        "questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/question" }
+        },
+        "title": { "type": "string" },
+        "source_summary": { "type": "string" },
+        "skill_version": { "type": "string", "description": "Authoring-skill build tag (currently \"1.5\"). Optional metadata; does not gate rendering." },
+        "routing": { "$ref": "#/$defs/routing" }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": ["id", "question", "options"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Should be unique within the questionnaire; duplicates are not rejected but collide answer state." },
+        "question": { "type": "string", "minLength": 1, "description": "The prompt. The key must be `question` — never `q`/`text`/`prompt`." },
+        "options": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Plain strings only — an option object is rejected. Do not include an \"Other\" entry; the renderer adds a free-text row automatically. May be [] for a pure free-text question, which then requires `open_field`."
+        },
+        "context": { "type": "string" },
+        "section": { "type": "string" },
+        "multi": { "type": "boolean", "description": "true = checkboxes (multi-select). Must be a boolean — \"true\"/1 are rejected." },
+        "recommended": {
+          "description": "Mark-only nudge: an option label (string), or an array of labels when `multi` is true. Must exactly match an existing option label; a non-matching value is silently ignored. Never pre-selects and never echoed into the answers.",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "open_field": {
+          "type": "object",
+          "description": "Overrides the default \"Other:\" label. Required when `options` is []. ",
+          "required": ["label"],
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "placeholder": { "type": "string" }
+          }
+        },
+        "allow_note": { "type": "boolean", "description": "Always omit — every option-bearing question always shows a note field." }
+      },
+      "allOf": [
+        {
+          "$comment": "A question with no options is pure free-text and must ship an explicit open_field.",
+          "if": { "properties": { "options": { "maxItems": 0 } }, "required": ["options"] },
+          "then": { "required": ["open_field"] }
+        }
+      ]
+    },
+    "prioritize": {
+      "type": "object",
+      "title": "Prioritize (verb: order)",
+      "description": "A short list the user ranks. Embedded only inside a ```prioritize fence (no bare-JSON shortcut). The array order is the suggested starting order.",
+      "required": ["version", "items"],
+      "properties": {
+        "version": { "const": "1" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/item" },
+          "description": "Item ids MUST be unique across the array — a duplicate id rejects the whole block. (JSON Schema cannot express per-property uniqueness; enforce it on your side.)"
+        },
+        "title": { "type": "string" },
+        "instruction": { "type": "string" },
+        "note_field": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "label": { "type": "string" }
+          }
+        },
+        "routing": { "$ref": "#/$defs/routing" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable and unique across items." },
+        "label": { "type": "string", "minLength": 1 },
+        "context": { "type": "string" }
+      }
+    }
+  }
+}
