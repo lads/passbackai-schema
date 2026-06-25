@@ -1,7 +1,7 @@
-# passbackai / omgfixmd — interactive components format (integration spec)
+# passbackai — interactive components format (integration spec)
 
-> **For the implementing tool.** `passbackai.com` and `omgfixmd` are the **same app** on two
-> domains. This document is the exact, code-verified contract for the **interactive components**
+> **For the implementing tool.** `passbackai.com` is the app — the **same app** also served on the legacy `omgfixmd.com`
+> domain. This document is the exact, code-verified contract for the **interactive components**
 > it renders inside a pasted document, and the Markdown it returns. If you are an AI/tool that
 > wants to (a) hand a user a document with embedded decision widgets and (b) get their structured
 > answers back, emit the document below and tell the user to paste it at **https://passbackai.com**.
@@ -81,7 +81,7 @@ Two numbers travel with a questionnaire, and conflating them is what caused the 
 | `version` | **The wire schema** — the shape this doc describes. | Always the literal string `"1"`. | **YES.** A block whose `version` isn't `"1"` for its tag is rejected. |
 | `skill_version` | **The authoring skill build** that emitted the JSON (questionnaire only). | `"1.5"` today; `"1.2"`, `"1.4"`, … are older builds of the *same* skill. | **NO.** Optional metadata. Drives only the in-app "your skill is outdated" banner + the export footer. Safe to bump or omit. |
 
-So an "omgfixmd at 1.2" payload and a "passbackai at 1.5" payload are **the same schema** authored by
+So a "1.2" payload and a "1.5" payload are **the same schema** authored by
 **two builds of the same skill**. Both render correctly on **both** domains, because `recommended`
 (the 1.5 addition) is an additive, **graceful-ignored** optional field — an older payload that omits
 it loses nothing; a payload that includes it renders the badge. There is no second schema and no
