@@ -153,8 +153,9 @@ parser, but it's redundant — emit bare JSON.)
 
 **4. Straight ASCII quotes only.** Use `"` for every key and string — **never** `"` `"` `‚` `'`.
 Many chat surfaces "smart-quote" straight quotes, which breaks `JSON.parse` and makes the block
-render as raw text instead of the widget. The parser attempts a smart-quote rescue on the structural
-double-quotes, but don't rely on it — emit straight quotes. Before sending, mentally run each block
+render as raw text instead of the widget. The parser attempts a best-effort rescue on input that fails
+to parse — it normalizes structural smart double-quotes to `"` and strips a trailing comma before a
+closing `}`/`]` — but don't rely on it; emit clean JSON. Before sending, mentally run each block
 through `JSON.parse`: balanced `{ }` / `[ ]`, no trailing commas.
 
 **5. Mix and repeat freely.** A document may contain any number of component blocks, of mixed types,
