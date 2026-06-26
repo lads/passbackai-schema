@@ -1,9 +1,9 @@
 ---
 name: question-extractor
 description: Extract open questions from any text (conversation, brief, PRD, email, spec) and output a JSON questionnaire that pastes directly into https://passbackai.com to render an interactive form. Use this whenever someone wants to identify unresolved decisions, find what's still unclear, or turn messy input into structured questions with answer options. Triggers include "extract the open questions", "what's still unclear", "what decisions are missing", "turn this into a questionnaire", "find the unknowns", "generate questions from this", "תוציא שאלות פתוחות", "מה עדיין לא ברור", "מה צריך להחליט", "passbackai".
-version: 1.5
+version: 1.6
 created: 05-05-2026
-updated: 2026-06-21
+updated: 2026-06-26
 created_by: adam-mason
 owner: Adam Mason
 triggers:
@@ -20,17 +20,28 @@ triggers:
 
 # Question Extractor
 
-**Job.** Read any input. Identify the open questions (decisions not made, ambiguities, missing info). Output a JSON questionnaire that pastes into https://passbackai.com.
+**Job.** Read any input. Identify the open questions (decisions not made, ambiguities, missing info). Produce a questionnaire and deliver it to PassbackAI — **via the `route_document` MCP tool when you are connected, or as a pasteable JSON fence when you are not** (see Delivery below).
 
 > **Scope.** A questionnaire is **one** of passbackai's interactive components — the *choose* verb (pick from options or free-text). This skill authors that one. The site renders a growing family of them (e.g. a **prioritize** block — the *order* verb, ranking a shortlist), each embedded as its own fenced JSON block in a document. This skill stays focused on extracting open **questions** → a questionnaire; the full questionnaire schema (every field, including `recommended`) is the public reference at <https://passbackai.com/ask>.
 
-**Output contract.** Two things, in this exact order, nothing else:
-1. A single JSON object **inside a ```json fenced code block** — never as raw, unfenced text. A code fence is copied verbatim; unfenced JSON gets its straight quotes "smart-quoted" (`"` → `“ ”`) by many chat surfaces, which breaks `JSON.parse` and makes the app render raw text instead of the form. Use straight ASCII quotes (`"`) only — never `“` `”` `‚` `'` — for every key and string.
+## Delivery — MCP route (primary) or paste (fallback)
+
+PassbackAI is **one tool with two ingress faces**: a document arrives by **MCP route** (the server stores it and opens it at `/r/<id>`) or by **paste** (local, in-browser). Author the **same questionnaire** either way — only how you hand it over differs:
+
+- **If you are connected to PassbackAI over MCP (PREFERRED):** call the **`route_document`** tool with a typed **`blocks[]`** array instead of printing JSON. Pass the questionnaire as one typed block — `{ "type": "questionnaire", "version": "1", "questions": [ … ] }` — alongside any `{ "type": "markdown", "text": "…" }` prose blocks, in reading order. The server **validates the component as you generate it, writes the fence for you, and returns a reviewer link** the user opens. On this path **there is no smart-quote risk** (you pass typed fields, not text), so the whole "fence it / straight quotes" hardening below does **not** apply — it is a paste-path concern only. To read the answers back, call **`list_responses`** (a pull — no copy-paste). The component fields are identical to the JSON schema below; only the `type` wrapper is added.
+- **If you are NOT connected (no MCP), or a route fails:** fall back to the **paste** path — emit the questionnaire JSON as a fenced block (Output contract below) and give the three-line paste instruction. Fully local; the document never leaves the browser.
+
+> **Privacy note to keep accurate.** The local paste loop never transmits the document. **Routing over MCP is an opt-in, server-side egress** — `route_document` stores the routed doc on the PassbackAI backend (server-managed keys, not zero-knowledge). Never describe a routed document as end-to-end-encrypted.
+
+**Output contract (the PASTE fallback).** When you are NOT routing over MCP, output two things, in this exact order, nothing else:
+1. A single JSON object **inside a ```json fenced code block** — never as raw, unfenced text. A code fence is copied verbatim; unfenced JSON gets its straight quotes "smart-quoted" (`"` → `“ ”`) by many chat surfaces, which breaks `JSON.parse` and makes the app render raw text instead of the form. Use straight ASCII quotes (`"`) only — never `“` `”` `‚` `'` — for every key and string. (On the MCP `route_document` path you skip all of this — the server serializes the JSON.)
 2. A short closing message in the user's language (see Closing Message Format below).
 
 No commentary, no category breakdown, no schema explanation, no "here's what I built." The closing message is the ONLY chat text after the JSON.
 
-## Closing Message Format (MANDATORY)
+## Closing Message Format (MANDATORY — paste path)
+
+This applies to the **paste fallback**. (On the MCP `route_document` path you don't print JSON or paste steps — you hand the user the reviewer link the tool returns.)
 
 After the JSON block, output exactly this structure (translate to user's language):
 
@@ -69,7 +80,7 @@ If clear from context (user said "for me", "for David", etc.), skip the question
 ```jsonc
 {
   "version": "1",                          // required, always "1" — the SCHEMA version, not the skill's
-  "skill_version": "1.5",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
+  "skill_version": "1.6",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
   "title": "<short title>",                // recommended
   "source_summary": "<one sentence>",      // optional
   "routing": {                             // omit when self-answering
@@ -106,7 +117,9 @@ If clear from context (user said "for me", "for David", etc.), skip the question
 | Context | Required on every question. One sentence. Reference the source. |
 | Version | Always emit `"skill_version": "<this skill's frontmatter version>"` at the JSON root. The app uses it to detect when the user's installed skill is older than the deployed version and offer an in-app upgrade prompt. The string MUST match this file's `version:` frontmatter. |
 
-## Validate before sending (MANDATORY)
+## Validate before sending (MANDATORY — paste path)
+
+These checks guard the **paste path**, where a hand-emitted JSON fence can be corrupted in transit. On the MCP `route_document` path the platform validates the typed `blocks[]` for you, so this checklist is moot there — but the key-name and `version` rules below still describe the correct field shapes you pass as typed arguments.
 
 Before you output the JSON, verify every item below. A single miss makes the app render raw text instead of the interactive form:
 
@@ -115,7 +128,7 @@ Before you output the JSON, verify every item below. A single miss makes the app
   - root: `version` (always `"1"`), `questions` (non-empty array). Optional: `title`, `skill_version`, `source_summary`, `routing`.
   - each question: `id`, `question` (the question text — **never `q`**), `options` (array of strings). Optional: `context`, `section`, `multi`, `recommended`, `open_field`.
 - **`recommended`, when set, must EXACTLY match an option label** (an array of labels for `multi`). The app graceful-ignores any value that doesn't match — the badge just won't show — but a non-matching value is a wasted nudge, so copy the option label verbatim.
-- **`version` vs `skill_version` are different fields.** `version` is the schema version, always `"1"`. `skill_version` is THIS skill's version (`"1.5"`). If you are not certain of your own skill version, **omit `skill_version`** rather than guessing — a missing value is treated as "unknown" (no nag), but a wrong low value triggers a false "update your skill" banner.
+- **`version` vs `skill_version` are different fields.** `version` is the schema version, always `"1"`. `skill_version` is THIS skill's version (`"1.6"`). If you are not certain of your own skill version, **omit `skill_version`** rather than guessing — a missing value is treated as "unknown" (no nag), but a wrong low value triggers a false "update your skill" banner.
 
 ## Renderer features (use when they earn their weight)
 
@@ -159,7 +172,7 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 ```json
 {
   "version": "1",
-  "skill_version": "1.5",
+  "skill_version": "1.6",
   "title": "Guest Check-In, Open Decisions",
   "routing": {
     "from": "Elad",
@@ -225,6 +238,9 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 ```
 
 ## Changelog
+
+### v1.6 (2026-06-26)
+- Delivery via the `route_document` MCP tool (primary when connected): pass the questionnaire as a typed `blocks[]` component instead of a pasted JSON fence — the server validates it, writes the fence, and returns a reviewer link; read answers back with `list_responses`. Paste-a-fence is now the local fallback, and the smart-quote hardening is re-scoped as paste-path-only.
 
 ### v1.5 (2026-06-21)
 - Recommended option: set `recommended` (an option label, or an array of labels for `multi`) to nudge the reader toward the suggested pick. The renderer shows a "Recommended" badge on the matching option without pre-selecting it; pair it with a `context` that explains why, and use it sparingly.

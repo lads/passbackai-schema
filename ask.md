@@ -1,10 +1,21 @@
 # passbackai — interactive components format (integration spec)
 
 > **For the implementing tool.** `passbackai.com` is the app — the **same app** also served on the legacy `omgfixmd.com`
-> domain. This document is the exact, code-verified contract for the **interactive components**
-> it renders inside a pasted document, and the Markdown it returns. If you are an AI/tool that
-> wants to (a) hand a user a document with embedded decision widgets and (b) get their structured
-> answers back, emit the document below and tell the user to paste it at **https://passbackai.com**.
+> domain. PassbackAI is a way to author **beautiful, interactive documents for people *and* for AI tools**:
+> a Markdown document with embedded decision widgets that a human fills in and an AI reads back as structured
+> answers. This document is the exact, code-verified contract for those **interactive components** and the
+> Markdown they return.
+>
+> **There are two ways to deliver such a document — pick by whether you are connected to PassbackAI over MCP:**
+>
+> | You are… | Deliver via | What you do |
+> |---|---|---|
+> | **Connected over MCP** (the AI-native path, **preferred**) | the **`route_document` MCP tool** | call `route_document` with a typed `blocks[]` array — the server validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link (`/r/<id>`). No copy-paste, no smart-quote risk. |
+> | **Not connected** (no MCP) | **paste** (the local fallback) | emit the Markdown document below and tell the user to paste it at **https://passbackai.com**. This is also the fallback when a route fails. |
+>
+> Both faces describe the **same components with the same JSON fields** — only the delivery differs. The
+> sections below specify those fields once; [§0.5](#05-delivery--mcp-route-primary-paste-fallback) covers the
+> MCP route in detail and [§10](#10-delivery-paths--mcp-route-vs-paste) compares the two.
 >
 > **Read this first — the model, not a single example.** An interactive component is a *typed
 > decision request* embedded in a Markdown document. There is a **growing family** of them, not a
@@ -21,7 +32,9 @@
 >
 > Source of truth: `src/markdown.jsx` (`parseBlocks` — the fence dispatch), `src/utils/questionnaire.js`
 > and `src/utils/prioritize.js` (per-component parser/validator/export), `public/skills/question-extractor.md`
-> (the authoring skill for the Questionnaire component), `src/domain.js` (types).
+> (the authoring skill for the Questionnaire component), `src/domain.js` (types). The MCP delivery path is
+> `api/_lib/mcp-tools.js` (the `route_document` / `get_components_spec` / `list_responses` tools) and
+> `api/_lib/route-document-blocks.js` (the typed `blocks[]` union — the same components as typed arguments).
 
 ---
 
@@ -33,13 +46,14 @@ interactive-components format. There is exactly one renderer (the PassbackAI app
 `question-extractor` skill, VideoStudio AI's Elements/Story prompts, the studio tooling, and anything
 added later — must agree with this file.**
 
-### Where to read the spec (three faces, one source)
+### Where to read the spec (four faces, one source)
 
 | Audience | Link | What it is |
 |---|---|---|
 | **Humans** | `https://passbackai.com/ask` | The rendered HTML page (`public/ask.html`). |
-| **Agents / tools** | `https://passbackai.com/ask.md` | **This file**, raw Markdown — plain `curl`, `text/markdown`, `Access-Control-Allow-Origin: *`, no JS/cookies/UA gating. |
+| **Agents / tools (read)** | `https://passbackai.com/ask.md` | **This file**, raw Markdown — plain `curl`, `text/markdown`, `Access-Control-Allow-Origin: *`, no JS/cookies/UA gating. |
 | **Programmatic validation** | `https://passbackai.com/schema.json` | JSON Schema (2020-12) for every component, for validating a payload before you send it. |
+| **Connected models (author)** | the **`route_document` MCP tool** | The AI-native delivery face. Its description inlines a compact, schema-derived shape for every component so a connected model can author the typed `blocks[]` directly; `get_components_spec` returns this full file on demand. See [§0.5](#05-delivery--mcp-route-primary-paste-fallback). |
 
 > **Sandboxed agents — reachability vs format are two problems.** `/ask.md` fixes *format* (clean
 > Markdown, curl-able, CORS), but a sandbox whose egress allowlist doesn't include `passbackai.com`
@@ -54,7 +68,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `1.5` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r6` · 2026-06-21 · hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)): the only two block types, a "NOT block types" list of hallucinated tags, common mistakes, and a combined starter — the Markdown fence contract is now documented as strongly as the JSON one. r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r7` · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -64,11 +78,15 @@ while the feature already shipped — because there was no single versioned link
 
 > **The rule:** any change to the renderer or a validator (`src/utils/questionnaire.js`,
 > `src/utils/prioritize.js`, `src/markdown.jsx` fence dispatch, `src/domain.js` types) **updates, in the
-> same commit, all three published faces** — this file (`public/ask.md`), the HTML page
-> (`public/ask.html`), and the JSON Schema (`public/schema.json`) — and bumps the **Spec revision** line
-> above. CI then mirrors `ask.md` + `schema.json` to the public repo automatically. A schema change that
-> lands while any face is stale is the bug — a stale page is exactly how the `recommended` drift stayed
-> invisible. Treat it like the extension contract: these three files are the contract, not the code's
+> same commit, all four published faces** — this file (`public/ask.md`), the HTML page
+> (`public/ask.html`), the JSON Schema (`public/schema.json`), and the **`route_document` MCP tool surface**
+> (`api/_lib/mcp-component-spec.js`, derived from `schema.json`) — and bumps the **Spec revision** line
+> above. CI enforces this: `scripts/check-mcp-components.js` fails if a `schema.json` component is missing
+> from the MCP tool surface, and `scripts/check-authoring-faces.js` fails if this file or the
+> question-extractor skill stops naming the `route_document` / `blocks` delivery path (or reasserts the old
+> "there is no API" claim). <!-- authoring-faces:allow — describing the guard requires naming the phrase it bans --> CI then mirrors `ask.md` + `schema.json` to the public repo automatically. A
+> change that lands while any face is stale is the bug — a stale page is exactly how the `recommended` drift
+> stayed invisible. Treat it like the extension contract: these four faces are the contract, not the code's
 > private knowledge.
 
 ### The version model — read this to avoid the exact drift above
@@ -89,15 +107,78 @@ second renderer to reconcile; sync the authoring side by matching this doc, not 
 
 ---
 
+## 0.5 DELIVERY — MCP route (primary), paste (fallback)
+
+PassbackAI has **one tool** with **two ingress faces** — a document arrives by **paste** (local origin) or by
+**MCP route** (server-stored, opened at `/r/<id>`). They are equally first-class; which you use depends only on
+whether you, the authoring model, are connected to PassbackAI over MCP.
+
+### When you ARE connected over MCP — use `route_document` (preferred)
+
+Call the **`route_document`** tool with a typed **`blocks[]`** array. Each block is **either** prose or one
+interactive component, passed as **typed JSON fields** (not a string you format):
+
+| Block | Shape (the `type` is the discriminant) |
+|---|---|
+| **Prose** | `{ "type": "markdown", "text": "…any Markdown prose…" }` |
+| **Questionnaire** | `{ "type": "questionnaire", "version": "1", "questions": [ … ] }` |
+| **Prioritize** | `{ "type": "prioritize", "version": "1", "items": [ … ] }` |
+
+The component fields (`questions`, `items`, every option, `routing`, …) are **identical** to the fenced JSON
+specified in §3–§4 — the only difference is the wrapper carries a `type` and you pass it as an argument
+instead of writing a fence. Then:
+
+- **The server writes the fences.** You never emit ` ```questionnaire ` syntax — `route_document` serializes
+  each block into the canonical document with `JSON.stringify`, in `blocks` order.
+- **The component is validated as you generate it.** Because it arrives as typed arguments, the platform
+  validates the shape at generation time — so **there is no smart-quote risk on this path** (the entire
+  smart-quote concern in §1/§3 is a **paste-path-only** hazard; it cannot occur here).
+- **You get a reviewer link back.** `route_document` returns a `/r/<id>` link the creator previews and then
+  shares; the routed doc adopts into the recipient's collection exactly like a `#s=` share link.
+- **`markdown` is the prose-only shortcut.** For a document with **no** component you may pass a single
+  `markdown` string instead of `blocks`. **`blocks` takes precedence** if both are given, and a component
+  fence hand-written inside a `markdown` string is **not** validated (it may degrade to a plain code block) —
+  so use `blocks` for anything with a component.
+
+**Reading answers back is also MCP-native — no copy-paste, no webhook.** Call **`list_responses`** for a
+document you routed; it returns each reviewer response as leaf-anchored `annotations[]` + leaf-free
+`componentInputs[]` (plus the verdict). This is a **pull** (you poll), not a callback. The reviewer's app
+submits via `POST /api/v1/reviewer/documents/:id/responses` — that is the app's own endpoint, not a tool you
+call. For the full field semantics on demand, call **`get_components_spec`** (it returns this file verbatim).
+
+> **Privacy demarcation — keep it exact.** The **local** paste → review → export loop and **sharing** (the
+> `#s=` URL hash fragment) never transmit the document. **Routing is the one deliberate, opt-in, server-side
+> egress:** `route_document` stores the routed doc on the PassbackAI backend (Postgres + KMS, **server-managed
+> keys — NOT zero-knowledge**). Never describe a routed document as end-to-end-encrypted. Routing is always
+> creator-initiated, never silent or default.
+
+### When you are NOT connected — paste (the local fallback)
+
+No MCP connection (or a route failed)? Fall back to the **paste** loop: emit the Markdown document (§1–§4) and
+tell the user to paste it at `https://passbackai.com`. This is the fully local, no-backend-touch path — the
+document never leaves the browser. It is unchanged and fully supported; it is simply the fallback when the
+AI-native route isn't available.
+
+---
+
 ## TL;DR — the whole loop
+
+**The AI-native loop (connected over MCP — preferred):**
+
+1. **You call `route_document`** with a typed `blocks[]` array (prose + component blocks, §0.5). The server
+   validates each component, writes the canonical fences, and returns a `/r/<id>` reviewer link.
+2. **The creator previews/shares the link; the reviewer fills it in** in the same rendered app.
+3. **You call `list_responses`** to pull their answers back (`annotations[]` + `componentInputs[]`) — a pull,
+   no copy-paste, no webhook.
+
+**The local loop (no MCP — the fallback):**
 
 1. **You emit** a **Markdown document** containing one or more fenced interactive-component blocks
    (` ```questionnaire `, ` ```prioritize `), each holding bare JSON.
 2. **User pastes it** into the textarea at **https://passbackai.com** → each block renders as an
    interactive widget inline in the document. No account, no login, nothing leaves the browser.
 3. **User fills/orders it, clicks "Copy" (answers / their edits)** → gets a **Markdown** block.
-4. **User pastes that Markdown back to you.** You parse it as their decisions. The loop is
-   **copy-paste, manual** — there is no API.
+4. **User pastes that Markdown back to you.** You parse it as their decisions.
 
 Minimal valid document (one questionnaire, one prioritize):
 
@@ -151,12 +232,16 @@ code block (so a typo shows up as visible JSON, not a broken page).
 the tag fence and its closing fence. (A ` ```json ` fence *inside* the tag fence is tolerated by the
 parser, but it's redundant — emit bare JSON.)
 
-**4. Straight ASCII quotes only.** Use `"` for every key and string — **never** `"` `"` `‚` `'`.
-Many chat surfaces "smart-quote" straight quotes, which breaks `JSON.parse` and makes the block
-render as raw text instead of the widget. The parser attempts a best-effort rescue on input that fails
+**4. Straight ASCII quotes only — a PASTE-PATH concern.** Use `"` for every key and string — **never**
+`"` `"` `‚` `'`. Many chat surfaces "smart-quote" straight quotes, which breaks `JSON.parse` and makes the
+block render as raw text instead of the widget. The parser attempts a best-effort rescue on input that fails
 to parse — it normalizes structural smart double-quotes to `"` and strips a trailing comma before a
 closing `}`/`]` — but don't rely on it; emit clean JSON. Before sending, mentally run each block
 through `JSON.parse`: balanced `{ }` / `[ ]`, no trailing commas.
+> **This whole rule applies only to the paste path** — the document you write as text. On the **MCP
+> `route_document`** path ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)) you pass the component as
+> typed `blocks[]` arguments and the **server** serializes the JSON, so smart-quoting cannot occur and you
+> never hand-write a fence. Prefer the MCP path whenever you are connected.
 
 **5. Mix and repeat freely.** A document may contain any number of component blocks, of mixed types,
 interleaved with prose. Each renders independently and each contributes its own section to the
@@ -166,10 +251,12 @@ copied-back Markdown, in document order.
 (the literal string; a number `1` is rejected). It versions that component's wire format, not your
 generator. See [§9 stability](#9-stability--versioning).
 
-**Render flow.** Open **https://passbackai.com** → paste the document into the textarea → each tagged
-block becomes its widget inline. **No account, anonymous, fully client-side — the document never
-leaves the browser.** There is no hosted-form URL, embeddable widget, or preload param: it's the
-paste surface.
+**Render flow (paste path).** Open **https://passbackai.com** → paste the document into the textarea → each
+tagged block becomes its widget inline. **No account, anonymous, fully client-side — the document never
+leaves the browser.** On this paste path there is no embeddable widget or preload param: it's the paste
+surface. (The **MCP `route_document`** path *does* return a hosted `/r/<id>` reviewer link — see
+[§0.5](#05-delivery--mcp-route-primary-paste-fallback) — because that path deliberately stores the doc
+server-side.)
 
 ---
 
@@ -581,23 +668,36 @@ family. Nothing you already emit breaks; the model just got wider.
 
 ---
 
-## 10. API vs MANUAL — is there a programmatic loop?
+## 10. DELIVERY PATHS — MCP route vs paste
 
-**No API. The round-trip is strictly copy-paste and stays fully manual:**
+There are **two** ways to deliver a document and read answers back. Pick by whether you are connected to
+PassbackAI over MCP. Both carry the **same components with the same JSON fields**; only the transport differs.
 
-- **In:** the user pastes your document into https://passbackai.com. There is no endpoint to POST a
-  document or a URL param to preload one.
-- **Out:** the user copies the Markdown answers and pastes them back to you. There is no callback,
-  webhook, or fetch-answers endpoint.
-- Everything runs client-side in the browser by design (the document never leaves the tab), so build
-  your integration around **"emit a document → instruct paste → ingest the Markdown the user pastes
-  back."**
+| | **MCP route** (preferred when connected) | **Paste** (local fallback) |
+|---|---|---|
+| **In** | Call `route_document` with typed `blocks[]` ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)). Server validates the component, writes the fences, returns a `/r/<id>` link. | Emit the Markdown document; the user pastes it at https://passbackai.com. No POST endpoint, no preload param on this path. |
+| **Out** | Call `list_responses` to **pull** the reviewer's `annotations[]` + `componentInputs[]`. A poll, not a webhook. | The user copies the Markdown answers and pastes them back to you. |
+| **Smart-quote risk** | None — typed args, server-serialized. | Yes — emit straight ASCII quotes (§1.4). |
+| **Where the doc lives** | Stored on the backend (opt-in, server-managed keys, **not** zero-knowledge). | Never leaves the browser. |
+
+- **There IS a programmatic path: the `route_document` MCP tool** (plus `list_responses` to read answers and
+  `get_components_spec` for the full schema on demand). It is the AI-native delivery and the preferred one
+  whenever a model is connected.
+- **The paste loop is the local fallback** — fully client-side, the document never leaves the tab — for when
+  there is no MCP connection, or when a route fails.
+- So build your integration around: **connected → `route_document` (typed `blocks[]`) → `list_responses`;
+  not connected → emit a document → instruct paste → ingest the Markdown the user pastes back.**
 
 ---
 
 ## Drop-in instruction for your tool's output
 
-After emitting the document, tell the user (in their language) exactly this:
+**If you are connected over MCP:** don't print paste instructions — call `route_document` with the typed
+`blocks[]`, then hand the user the `/r/<id>` link it returns and (when you want their answers) call
+`list_responses`.
+
+**If you are NOT connected (paste fallback):** after emitting the document, tell the user (in their language)
+exactly this:
 
 ```
 1. Copy the document above
