@@ -1,9 +1,9 @@
 ---
 name: passback
 description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, three internal jobs — REVIEW (route existing prose for open-ended feedback), ASK (turn an ambiguous request into a questionnaire — and a prioritize when ordering a shortlist — wrapped in prose context, then route it), and PULL (read back what reviewers answered on a doc you sent). Infer which job from the request; ask the user only when it is genuinely unclear. Use whenever someone wants feedback on a draft, wants to turn messy input into structured questions, wants to know what came back on a routed doc, or says "passbackai" / "/passback". Triggers include "route this for review", "get feedback on this draft", "extract the open questions", "what's still unclear", "what decisions are missing", "turn this into a questionnaire", "what came back on the doc I sent", "did anyone answer", "תוציא שאלות פתוחות", "מה עדיין לא ברור", "מה צריך להחליט", "שלח לבדיקה", "passbackai".
-version: 2.0
+version: 2.1
 created: 05-05-2026
-updated: 2026-06-27
+updated: 2026-06-30
 created_by: adam-mason
 owner: Adam Mason
 triggers:
@@ -72,7 +72,25 @@ Do **not** rewrite the author's prose into questions. REVIEW collects free-form 
 
 ## JOB: ASK — turn ambiguity into a questionnaire (+ prioritize when warranted), then route
 
-Read the input. Identify the **open questions** — decisions not made, ambiguities, missing info, placeholders ("TBD", "ask the team"), conflicts between stated preferences, scope boundaries left undefined. Wrap them in just enough prose context, then route.
+Read the input. Identify the **open questions** — decisions not made, ambiguities, missing info, placeholders ("TBD", "ask the team"), conflicts between stated preferences, scope boundaries left undefined. Then author a **document with the questions embedded in it** — not a form (see the next rule), and route.
+
+### Author a document, not a form — context as prose BEFORE each question
+
+This is the rule that decides how the output *feels*. The reviewer should read **a short document with questions set into it**, not a stack of form fields with footnotes. Two failures produce the form feel — avoid both:
+
+1. **Don't lump every question into one block.** A single `questionnaire` fence renders its questions back-to-back with nothing between them — that is the form. Instead, **give each question (or a tightly-coupled pair) its own embedded fence, and write a sentence or two of prose BEFORE it** that sets it up. The prose carries the explanation; the fence carries the choice. The reviewer reads context, *then* the question — the way a document reads.
+2. **Don't bury the explanation in the per-question `context` field.** That field renders *below* the prompt, so the reviewer hits the question cold and reads the "why" only after. The explanation, the framing, the reassurance — put it in the **prose that comes before the question**. Leave `context` empty, or use it only for a terse one-line caption that genuinely belongs under the prompt (rare).
+
+So the shape of an ASK output is: a short intro paragraph → prose → a question → prose → a question → … — interleaved. Open the document with 1–3 sentences of plain framing (who it's from, what it's for, that none of it is a test), then walk the reviewer question by question, each one introduced by its own lead-in.
+
+**How that maps to delivery:**
+
+- **Connected (MCP `route_document`):** emit an **interleaved `blocks[]` array** — a `{ "type": "markdown", "text": "…" }` lead-in block, then a `questionnaire` block holding just that one question, then the next markdown lead-in, then its question, and so on. **One question per `questionnaire` block**, never all of them in one. A `prioritize` block, when warranted, is just another block in the flow with its own prose lead-in.
+- **Not connected (paste):** emit a **Markdown document** with prose paragraphs and **one ` ```questionnaire ` fence per question** set between them. Each fence is a complete JSON object (`version`, `questions` with that single question). Prose lives between the fences, as ordinary Markdown.
+
+A tightly-coupled pair of questions may share one fence when they truly have the same setup and no prose belongs between them — but the default is one question per fence with its own lead-in. When in doubt, split.
+
+**Framing lives in prose, not in fields.** When questions are embedded in a document, the renderer shows only the question cards — it does **not** display the `title` or `routing.return_prompt`. So write the title as a Markdown heading, and put the "from <name> / send your answers back to <name>" instruction in the opening and closing prose. The `title`/`routing` fields may still be set (harmless), but never rely on them to be seen in document mode.
 
 ### Choose the right component — the sharpened gate
 
@@ -97,7 +115,7 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
 ```jsonc
 {
   "version": "1",                          // required, always "1" — the SCHEMA version, not the skill's
-  "skill_version": "2.0",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
+  "skill_version": "2.1",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
   "title": "<short title>",                // recommended
   "source_summary": "<one sentence>",      // optional
   "routing": {                             // omit when self-answering
@@ -108,7 +126,7 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
     {
       "id": "q1",                          // required, unique
       "question": "<the open question>",   // required — NEVER the key `q`
-      "context": "<why this is open>",     // required, one sentence, reference the source
+      "context": "",                       // OPTIONAL — the explanation belongs in the prose BEFORE the question; renders below the prompt, so leave empty unless a terse one-line caption truly belongs there
       "section": "<chapter title>",        // optional — see Sections
       "options": ["a", "b", "c", "d"],     // 3 to 4 short labels — OR [] for a pure free-text question
       "multi": false,                      // optional — true to allow multiple picks; default false
@@ -129,7 +147,7 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
 | Never | Don't put "Other" inside `options` — the renderer adds it. |
 | Skip | If the answer is already in the text, don't ask. |
 | One per | One decision per question. Don't bundle. |
-| Context | Required on every question. One sentence. Reference the source. |
+| Context | The explanation goes in the **prose before the question**, not here. The `context` field is OPTIONAL and renders *below* the prompt — leave it empty, or use it only for a terse one-line caption that genuinely belongs under the question. |
 | Version | Always emit `"skill_version"` matching this file's frontmatter `version`. The app uses it to detect an outdated install and offer an upgrade. |
 
 **Renderer features (use when they earn their weight):**
@@ -189,7 +207,7 @@ If you don't know the document id, ask the user which routed document they mean 
 When you are **NOT** routing over MCP, deliver as paste. On the `route_document` path the platform validates the typed `blocks[]` for you, so the fence/quote hardening below does **not** apply — but the field shapes (key names, the `version` vs `skill_version` distinction) are still the correct shapes you pass as typed arguments.
 
 **Output two things, in this exact order, nothing else:**
-1. The Markdown document **inside a fenced code block** when it's a sole component (so it copies verbatim), or as plain Markdown when it's prose with embedded ` ```questionnaire ` / ` ```prioritize ` fences. **Use straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string. A code fence is copied verbatim; unfenced JSON gets its quotes "smart-quoted" by many chat surfaces, which breaks `JSON.parse` and renders raw text instead of the form.
+1. The Markdown document. For an ASK output this is **plain Markdown — prose paragraphs with one ` ```questionnaire ` fence per question (plus any ` ```prioritize ` fence) interleaved between them**, per the "document, not a form" rule. Do **not** wrap the whole document in one outer code block; the inner ` ```questionnaire ` / ` ```prioritize ` fences each copy verbatim, which is what protects their JSON. (The "whole document inside one fenced code block" form is only for the degenerate sole-component case the document rule discourages.) **Use straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string inside the fences. A code fence is copied verbatim; unfenced JSON gets its quotes "smart-quoted" by many chat surfaces, which breaks `JSON.parse` and renders raw text instead of the form.
 2. A short closing message in the user's language (below).
 
 No commentary, no category breakdown, no schema explanation.
@@ -198,26 +216,27 @@ No commentary, no category breakdown, no schema explanation.
 - It must `JSON.parse` cleanly — balanced `{ } [ ]`, no trailing commas, straight `"` quotes only.
 - Exact key names, matched literally: root `version` (`"1"`), `questions` (non-empty); each question `id`, `question` (**never `q`**), `options`. Optional: `title`, `skill_version`, `source_summary`, `routing`, `section`, `multi`, `recommended`, `open_field`.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- `version` (schema, always `"1"`) vs `skill_version` (this skill's, `"2.0"`) are different fields. If unsure of your own skill version, **omit `skill_version`** rather than guess a wrong low value (which would trigger a false "update your skill" banner).
+- `version` (schema, always `"1"`) vs `skill_version` (this skill's, `"2.1"`) are different fields. If unsure of your own skill version, **omit `skill_version`** rather than guess a wrong low value (which would trigger a false "update your skill" banner).
+- Each ` ```questionnaire ` fence is its own complete object — every fence carries `version` (and the same `skill_version`); the `questions` array inside a per-question fence holds that one question. Multiple fences in one document is the norm, not an error.
 
 ### Closing message (paste path)
 
-For a questionnaire, after the block output exactly this (translate to the user's language):
+After the document, output exactly this (translate to the user's language) — say **document**, not "JSON", because the output is a document with the questions set into it:
 
 ```
-X questions in Y categories.
+X questions.
 
-1. Copy the JSON above
+1. Copy the document above
 2. Open https://passbackai.com
 3. Click Paste
 ```
 
-Drop the categories phrase (`X questions.`) when there are no sections. Hebrew variant:
+Hebrew variant:
 
 ```
-X שאלות ב-Y קטגוריות.
+X שאלות.
 
-1. העתק את ה-JSON למעלה
+1. העתק את המסמך למעלה
 2. פתח את https://passbackai.com
 3. לחץ Paste
 ```
@@ -236,45 +255,43 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 
 **Input:** "Mobile guest check-in feature — sending the open decisions to Elad. Haven't decided PIN vs room number; biometric debate (v1 or defer); legal must confirm retention. Also: we have four launch markets queued — US, UK, Germany, Japan — and need Elad to set the rollout order."
 
-**Output (connected → typed `blocks[]`; shown here as the equivalent document):**
+**Output (a document with the questions embedded — prose before each one. Connected: the same content as an interleaved `blocks[]` array, one markdown block then one questionnaire block, repeated. Paste: the Markdown below, verbatim):**
 
-```json
-{
-  "version": "1",
-  "skill_version": "2.0",
-  "title": "Guest Check-In, Open Decisions",
-  "routing": {
-    "from": "Elad",
-    "return_prompt": "When done, copy your answers and send them back to Elad."
-  },
-  "questions": [
-    {
-      "id": "q1",
-      "question": "What authentication method should guests use at check-in?",
-      "context": "Brief: PIN vs room number not yet decided.",
-      "options": ["Room number only", "Room number + PIN", "Last name + booking ref", "Magic link"]
-    },
-    {
-      "id": "q2",
-      "question": "Should we offer biometric authentication in v1?",
-      "context": "Team split between v1 and defer; deferring keeps v1 scope tight and avoids a privacy review on the critical path.",
-      "options": ["No, defer to v2", "Optional opt-in", "Required"],
-      "recommended": "No, defer to v2"
-    },
-    {
-      "id": "q3",
-      "question": "What is the data retention policy?",
-      "context": "Brief notes legal sign-off pending.",
-      "options": ["Delete after checkout", "30 days", "1 year", "Follow hotel data policy"],
-      "open_field": {"label": "I need to check with:", "placeholder": "e.g. legal team, DPO"}
-    }
-  ]
-}
-```
-
-```prioritize
-{"version":"1","items":[{"id":"us","label":"United States"},{"id":"uk","label":"United Kingdom"},{"id":"de","label":"Germany"},{"id":"jp","label":"Japan"}]}
-```
+> # Guest check-in — a few open decisions
+>
+> Hi Elad — these are the three things we didn't lock on the mobile check-in brief, plus the launch order. None of this is a test; pick what fits or leave a note, and send your answers back to me when you're done.
+>
+> First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. Where do you want to land?
+>
+> ````
+> ```questionnaire
+> {"version":"1","skill_version":"2.1","questions":[{"id":"q1","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"]}]}
+> ```
+> ````
+>
+> Next, biometrics. The team split on whether face/fingerprint ships in v1 or waits. Deferring keeps v1 tight and keeps a privacy review off the critical path — which is why I'd lean to deferring, but it's your call.
+>
+> ````
+> ```questionnaire
+> {"version":"1","skill_version":"2.1","questions":[{"id":"q2","question":"Should we offer biometric authentication in v1?","options":["No, defer to v2","Optional opt-in","Required"],"recommended":"No, defer to v2"}]}
+> ```
+> ````
+>
+> Last on the spec: retention. The brief flags legal sign-off as pending, so if this needs to go through someone, tell me who.
+>
+> ````
+> ```questionnaire
+> {"version":"1","skill_version":"2.1","questions":[{"id":"q3","question":"What is the data retention policy?","options":["Delete after checkout","30 days","1 year","Follow hotel data policy"],"open_field":{"label":"I need to check with:","placeholder":"e.g. legal team, DPO"}}]}
+> ```
+> ````
+>
+> Separately — we have four launch markets queued and no order. Drag them into the sequence you'd ship them in:
+>
+> ````
+> ```prioritize
+> {"version":"1","items":[{"id":"us","label":"United States"},{"id":"uk","label":"United Kingdom"},{"id":"de","label":"Germany"},{"id":"jp","label":"Japan"}]}
+> ```
+> ````
 
 ```
 3 questions, plus a launch-order ranking.
@@ -284,9 +301,12 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 3. Click Paste
 ```
 
-The four launch markets are a clean prioritize: the decision is **order**, there are **≥3 concrete peers** that already exist, and they're **mutually rankable**. The three open decisions stay a questionnaire — they're **picks**, not an ordering.
+Note the shape: a heading, then **prose that sets up each question before the question appears**, each question in its **own fence**, the four launch markets in a `prioritize` (the decision is **order**, ≥3 concrete mutually-rankable peers) — not crammed into one form block, and no per-question `context` field (the setup is the prose above it). The "send it back to me" instruction is in the opening prose because the embedded renderer won't show `routing`. *(The `` ```…``` `` quad-backtick wrappers above are only so this doc can show a fence inside a fence — your real output uses plain triple-backtick fences.)*
 
 ## Changelog
+
+### v2.1 (2026-06-30)
+- **Document, not a form.** ASK now authors a document with the questions embedded in it: prose sets up each question *before* it, each question gets its own ` ```questionnaire ` fence (interleaved markdown + questionnaire `blocks[]` on the MCP path), and the explanation lives in that lead-in prose instead of the per-question `context` field (which renders below the prompt and made the output read like a form). One question per fence by default; framing (title, "send it back to <name>") goes in prose, since the embedded renderer shows only the question cards.
 
 ### v2.0 (2026-06-27)
 - **One skill, three jobs.** `/passback` consolidates the loop into REVIEW (route existing prose for open feedback), ASK (turn ambiguity into a questionnaire — plus a prioritize when ordering a ≥3-peer shortlist — wrapped in prose context, then route), and PULL (`list_responses` + synthesize). Intent is inferred; the model asks only when genuinely unclear. Supersedes and renames the old `question-extractor` skill.
