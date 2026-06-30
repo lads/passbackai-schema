@@ -1,7 +1,7 @@
 ---
 name: passback
 description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, three internal jobs — REVIEW (route existing prose for open-ended feedback), ASK (turn an ambiguous request into a questionnaire — and a prioritize when ordering a shortlist — wrapped in prose context, then route it), and PULL (read back what reviewers answered on a doc you sent). Infer which job from the request; ask the user only when it is genuinely unclear. Use whenever someone wants feedback on a draft, wants to turn messy input into structured questions, wants to know what came back on a routed doc, or says "passbackai" / "/passback". Triggers include "route this for review", "get feedback on this draft", "extract the open questions", "what's still unclear", "what decisions are missing", "turn this into a questionnaire", "what came back on the doc I sent", "did anyone answer", "תוציא שאלות פתוחות", "מה עדיין לא ברור", "מה צריך להחליט", "שלח לבדיקה", "passbackai".
-version: 2.1
+version: 2.2
 created: 05-05-2026
 updated: 2026-06-30
 created_by: adam-mason
@@ -115,7 +115,7 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
 ```jsonc
 {
   "version": "1",                          // required, always "1" — the SCHEMA version, not the skill's
-  "skill_version": "2.1",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
+  "skill_version": "2.2",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
   "title": "<short title>",                // recommended
   "source_summary": "<one sentence>",      // optional
   "routing": {                             // omit when self-answering
@@ -130,7 +130,7 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
       "section": "<chapter title>",        // optional — see Sections
       "options": ["a", "b", "c", "d"],     // 3 to 4 short labels — OR [] for a pure free-text question
       "multi": false,                      // optional — true to allow multiple picks; default false
-      "recommended": "b",                  // optional — the suggested option LABEL (string; array of labels when multi). Shows a badge; does NOT pre-select. Must exactly match an option label.
+      "recommended": "b",                  // the suggested option LABEL (string; array when multi). Set it whenever you have an honest lean — most questions do. Shows a badge; does NOT pre-select. Must exactly match an option label.
       "open_field": {                      // OMIT for the default "Other"; REQUIRED when options is []
         "label": "I need to check with:",
         "placeholder": "e.g. legal team"
@@ -152,11 +152,11 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
 
 **Renderer features (use when they earn their weight):**
 
-- **Default Other.** Omit `open_field` for the localized "Other:" input plus the edit-into-Other gesture (hover-pencil desktop, long-press mobile). Set a custom `open_field.label` only when the escape-hatch needs a directed phrase: blocked on a person → `"I need to check with:"`; external dependency → `"Depends on:"`; reasoning needed → `"The reason is:"`; constraint → `"The constraint is:"`.
+- **Default Other (prefer it).** By default **omit `open_field`** — that gives the localized "Other:" input *plus* the edit-into-Other gesture (pick a listed option, then tweak it: the desktop hover-pencil / mobile long-press / Shift+letter). That gesture only exists on the default Other, so omitting `open_field` is the richer choice and should be your norm. Reserve a custom `open_field.label` for the narrow case where the escape-hatch genuinely needs a directed phrase — blocked on a person → `"I need to check with:"`; external dependency → `"Depends on:"`; reasoning needed → `"The reason is:"`; constraint → `"The constraint is:"` — since a custom label intentionally hides the edit-into-Other pencil (injecting an option into a directed field reads as nonsense).
 - **Free-text questions.** No preset choices? Emit `"options": []` **with** an explicit `open_field` whose `label` names the field ("Deadline:", "Owner:", "Describe it:") and an optional `placeholder`. `open_field` is REQUIRED here. Prefer real options when genuine distinct paths exist.
 - **Sections.** Set `section` only when ≥2 chapters exist AND each has 2+ questions. Keep same-section questions consecutive (the renderer groups consecutive items). For <5 questions or no natural break, skip it.
 - **Multi-select.** Set `multi: true` ONLY when the question genuinely allows more than one answer (features for v1, integrations, regions, stakeholders). Never for mutually-exclusive picks. Keep options short and parallel.
-- **Recommended.** Optional. Set `recommended` to a single option label (or an array for `multi`) to nudge toward the suggested pick — the badge labels *which*, the `context` must explain *why*. Use sparingly; the value must exactly match an option label.
+- **Recommended.** Set `recommended` to a single option label (or an array for `multi`) whenever one option is the safer, more common, or more defensible path — which is **most** option-bearing questions, so reach for it by default, not rarely. The badge labels *which*; the **prose lead-in before the question** explains *why* you lean that way. Skip it only when the options are genuinely equal and you'd have no honest lean. The value must exactly match an option label (graceful-ignored otherwise).
 - **Routing.** When set, `routing.return_prompt` MUST contain the literal value of `routing.from` so the renderer can auto-bold the name.
 - **RTL.** Auto-detected from content. Don't set a language field. Hebrew/Arabic input → Hebrew/Arabic chrome.
 - **Notes.** Every option-bearing question has a `+ add a note` toggle; a note alone is a valid answer. Don't engineer "TBD" options.
@@ -216,7 +216,7 @@ No commentary, no category breakdown, no schema explanation.
 - It must `JSON.parse` cleanly — balanced `{ } [ ]`, no trailing commas, straight `"` quotes only.
 - Exact key names, matched literally: root `version` (`"1"`), `questions` (non-empty); each question `id`, `question` (**never `q`**), `options`. Optional: `title`, `skill_version`, `source_summary`, `routing`, `section`, `multi`, `recommended`, `open_field`.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- `version` (schema, always `"1"`) vs `skill_version` (this skill's, `"2.1"`) are different fields. If unsure of your own skill version, **omit `skill_version`** rather than guess a wrong low value (which would trigger a false "update your skill" banner).
+- `version` (schema, always `"1"`) vs `skill_version` (this skill's, `"2.2"`) are different fields. If unsure of your own skill version, **omit `skill_version`** rather than guess a wrong low value (which would trigger a false "update your skill" banner).
 - Each ` ```questionnaire ` fence is its own complete object — every fence carries `version` (and the same `skill_version`); the `questions` array inside a per-question fence holds that one question. Multiple fences in one document is the norm, not an error.
 
 ### Closing message (paste path)
@@ -261,11 +261,11 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 >
 > Hi Elad — these are the three things we didn't lock on the mobile check-in brief, plus the launch order. None of this is a test; pick what fits or leave a note, and send your answers back to me when you're done.
 >
-> First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. Where do you want to land?
+> First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole. Where do you want to land?
 >
 > ````
 > ```questionnaire
-> {"version":"1","skill_version":"2.1","questions":[{"id":"q1","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"]}]}
+> {"version":"1","skill_version":"2.2","questions":[{"id":"q1","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN"}]}
 > ```
 > ````
 >
@@ -273,7 +273,7 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 >
 > ````
 > ```questionnaire
-> {"version":"1","skill_version":"2.1","questions":[{"id":"q2","question":"Should we offer biometric authentication in v1?","options":["No, defer to v2","Optional opt-in","Required"],"recommended":"No, defer to v2"}]}
+> {"version":"1","skill_version":"2.2","questions":[{"id":"q2","question":"Should we offer biometric authentication in v1?","options":["No, defer to v2","Optional opt-in","Required"],"recommended":"No, defer to v2"}]}
 > ```
 > ````
 >
@@ -281,7 +281,7 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 >
 > ````
 > ```questionnaire
-> {"version":"1","skill_version":"2.1","questions":[{"id":"q3","question":"What is the data retention policy?","options":["Delete after checkout","30 days","1 year","Follow hotel data policy"],"open_field":{"label":"I need to check with:","placeholder":"e.g. legal team, DPO"}}]}
+> {"version":"1","skill_version":"2.2","questions":[{"id":"q3","question":"What is the data retention policy?","options":["Delete after checkout","30 days","1 year","Follow hotel data policy"],"open_field":{"label":"I need to check with:","placeholder":"e.g. legal team, DPO"}}]}
 > ```
 > ````
 >
@@ -301,9 +301,13 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 3. Click Paste
 ```
 
-Note the shape: a heading, then **prose that sets up each question before the question appears**, each question in its **own fence**, the four launch markets in a `prioritize` (the decision is **order**, ≥3 concrete mutually-rankable peers) — not crammed into one form block, and no per-question `context` field (the setup is the prose above it). The "send it back to me" instruction is in the opening prose because the embedded renderer won't show `routing`. *(The `` ```…``` `` quad-backtick wrappers above are only so this doc can show a fence inside a fence — your real output uses plain triple-backtick fences.)*
+Note the shape: a heading, then **prose that sets up each question before the question appears**, each question in its **own fence**, the four launch markets in a `prioritize` (the decision is **order**, ≥3 concrete mutually-rankable peers) — not crammed into one form block, and no per-question `context` field (the setup is the prose above it). Note also: q1 and q2 carry a `recommended` because there's an honest lean, and the *why* sits in the prose lead-in, not in `context`; q1 and q2 omit `open_field`, so they keep the **default Other** with its edit-into-Other pencil, while q3 opts into a directed `open_field.label` ("I need to check with:") and deliberately gives up that pencil. The "send it back to me" instruction is in the opening prose because the embedded renderer won't show `routing`. *(The `` ```…``` `` quad-backtick wrappers above are only so this doc can show a fence inside a fence — your real output uses plain triple-backtick fences.)*
 
 ## Changelog
+
+### v2.2 (2026-06-30)
+- **Lean in with `recommended`.** Reach for `recommended` by default on option questions where there's an honest lean (most of them), not rarely — the *why* lives in the prose lead-in. Pairs with the renderer making the recommended star clearer at rest.
+- **Prefer the default Other.** Omitting `open_field` is now the explicit norm, because only the default Other carries the edit-into-Other gesture (pick an option, then tweak it). A custom `open_field.label` is reserved for the narrow directed-escape-hatch case, which intentionally gives up that pencil.
 
 ### v2.1 (2026-06-30)
 - **Document, not a form.** ASK now authors a document with the questions embedded in it: prose sets up each question *before* it, each question gets its own ` ```questionnaire ` fence (interleaved markdown + questionnaire `blocks[]` on the MCP path), and the explanation lives in that lead-in prose instead of the per-question `context` field (which renders below the prompt and made the output read like a form). One question per fence by default; framing (title, "send it back to <name>") goes in prose, since the embedded renderer shows only the question cards.
