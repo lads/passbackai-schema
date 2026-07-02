@@ -1,9 +1,9 @@
 ---
 name: passback
-description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, three internal jobs — REVIEW (route existing prose for open-ended feedback), ASK (turn an ambiguous request into a questionnaire — and a prioritize when ordering a shortlist — wrapped in prose context, then route it), and PULL (read back what reviewers answered on a doc you sent). Infer which job from the request; ask the user only when it is genuinely unclear. Use whenever someone wants feedback on a draft, wants to turn messy input into structured questions, wants to know what came back on a routed doc, or says "passbackai" / "/passback". Triggers include "route this for review", "get feedback on this draft", "extract the open questions", "what's still unclear", "what decisions are missing", "turn this into a questionnaire", "what came back on the doc I sent", "did anyone answer", "תוציא שאלות פתוחות", "מה עדיין לא ברור", "מה צריך להחליט", "שלח לבדיקה", "passbackai".
-version: 2.2
+description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, three internal jobs — REVIEW (route existing prose for open-ended feedback), ASK (turn an ambiguous request into a questionnaire — and a prioritize when ordering a shortlist — wrapped in prose context, then route it), and PULL (read back what reviewers answered on a doc you sent). Infer PULL from the request; when the user hasn't said whether they want a clean feedback summary (REVIEW) or that summary with clarification questions on the undecided / missing parts (ASK), ask them to pick between those two before you build anything. Use whenever someone wants feedback on a draft, wants to turn messy input into structured questions, wants to know what came back on a routed doc, or says "passbackai" / "/passback". Triggers include "route this for review", "get feedback on this draft", "extract the open questions", "what's still unclear", "what decisions are missing", "turn this into a questionnaire", "what came back on the doc I sent", "did anyone answer", "תוציא שאלות פתוחות", "מה עדיין לא ברור", "מה צריך להחליט", "שלח לבדיקה", "passbackai".
+version: 2.3
 created: 05-05-2026
-updated: 2026-06-30
+updated: 2026-07-02
 created_by: adam-mason
 owner: Adam Mason
 triggers:
@@ -25,7 +25,7 @@ triggers:
 
 **What PassbackAI is.** One tool that closes a feedback loop: you **route** a document (prose, or prose with embedded decision widgets) to a reviewer, the reviewer answers in a beautiful interactive surface, and you **pull** their answers back as structured data. The reviewer is often the user themselves; sometimes it is someone they hand the link to.
 
-**This skill has three internal jobs. Pick one by inferring intent — ask only when genuinely unclear.**
+**This skill has three internal jobs. Detect PULL from the request; between REVIEW and ASK, let the user choose whenever they haven't already said which.**
 
 | Job | The user wants… | You do… |
 |---|---|---|
@@ -33,25 +33,24 @@ triggers:
 | **ASK** | to surface and resolve what is undecided / unclear | author a questionnaire (and a prioritize when ordering is warranted) wrapped in prose context, then route it |
 | **PULL** | to know what came back on a doc they already sent | call `list_responses` and synthesize — **never author a new questionnaire** |
 
-## Intent routing — decide first, ask rarely
+## Intent routing — detect PULL, then let the user pick REVIEW vs ASK
 
-Read the request and the document. Route to exactly one job:
+Read the request and the document. First separate PULL (reading back existing answers) from the REVIEW/ASK pair (producing a document to route). Then, unless the user has already told you which of REVIEW or ASK they want, **ask them to choose** — don't silently pick for them.
 
-- **PULL** when the user asks about *answers that already exist*: "what came back", "did anyone respond", "what did they say on the doc I sent", "pull the feedback on <doc>". The doc is already routed; the user wants its responses. → **PULL.** Do **not** generate a questionnaire.
-- **REVIEW** when there is an existing piece of prose and the user wants *someone's reaction* to it: "get feedback on this draft", "route this PRD for review", "send this to Dana for comments". The content is written; you are collecting open-ended notes, not forcing choices. → **REVIEW.** Do **not** invent questions the author did not ask for.
-- **ASK** when the input is messy or under-decided and the user wants *the open questions surfaced*: "what's still unclear", "turn this into a questionnaire", "what decisions are missing". → **ASK.**
-- **Ask the user ONE clarifying question only when the request is truly ambiguous** — e.g. a bare "help me with this doc" where you cannot tell whether they want open feedback (REVIEW) or the decisions extracted (ASK). Then:
+- **PULL** when the user asks about *answers that already exist*: "what came back", "did anyone respond", "what did they say on the doc I sent", "pull the feedback on <doc>". The doc is already routed; the user wants its responses. → **PULL.** Do **not** generate a questionnaire, and do **not** ask the REVIEW-vs-ASK question — PULL is unambiguous.
+- **The user already said which one → skip the question and act.** Explicit REVIEW intent ("get feedback on this draft", "route this PRD for review", "send this to Dana for comments" — they want *someone's reaction* to finished prose) → **REVIEW**, and don't invent questions they didn't ask for. Explicit ASK intent ("what's still unclear", "turn this into a questionnaire", "what decisions are missing", "pull out the open questions") → **ASK**.
+- **Otherwise — the user hasn't specified which — ASK THEM before building anything**, and ask it the way a picker expects: a **short** question with **two tappable options**, not a long prose sentence. If your harness has a structured question/choice tool (e.g. **AskUserQuestion**), use it — one question, two options with terse labels and a one-line description each:
+  - **Feedback summary** — a clean write-up to hand over for open feedback → **REVIEW**
+  - **+ clarifying questions** — the same summary with questions built in on the undecided / missing parts → **ASK**
 
-  > "Do you want open-ended feedback on this as-is, or should I pull out the open questions for someone to decide?"
-
-  If intent is clear from context, **skip the question** and act.
+  Keep labels to ~2–4 words and write them in the user's language (Hebrew: **"סיכום לפידבק"** / **"סיכום + שאלות הבהרה"**). No structured tool available? Ask the same two-way choice in one short line. Then wait for the answer and build. Skip the question only when the user's own words already make the choice for you (per the bullet above).
 
 ## Delivery — MCP route (primary) or paste (fallback)
 
 All three jobs deliver the **same way**, by whether you are connected to PassbackAI over MCP:
 
 - **Connected over MCP (PREFERRED):** call the **`route_document`** tool with a typed **`blocks[]`** array — prose as `{ "type": "markdown", "text": "…" }` blocks and each interactive component as its own typed block, in reading order. The server **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`) the user opens. On this path there is **no smart-quote risk** (you pass typed fields, not text), so the fence/straight-quote hardening below is a **paste-path concern only**. Read answers back with **`list_responses`** (a pull — no copy-paste, no webhook).
-- **NOT connected (no MCP), or a route fails:** fall back to **paste** — emit the Markdown document (with any component as a fenced JSON block) and give the three-line paste instruction. Fully local; the document never leaves the browser.
+- **NOT connected (no MCP), or a route fails:** fall back to **paste** — emit the **entire** Markdown document inside **one single outer code fence** (so the user copies it once and pastes it once — see the Output contract), then give the three-line paste instruction. Fully local; the document never leaves the browser.
 
 > **The component fields are identical on both paths** — only delivery differs. This skill keeps the authoring rules lean; the **full, code-verified component schema (every field, both components) lives at <https://passbackai.com/ask>** (raw: `/ask.md`, JSON Schema: `/schema.json`). Read it there rather than expecting this file to restate it.
 
@@ -86,7 +85,7 @@ So the shape of an ASK output is: a short intro paragraph → prose → a questi
 **How that maps to delivery:**
 
 - **Connected (MCP `route_document`):** emit an **interleaved `blocks[]` array** — a `{ "type": "markdown", "text": "…" }` lead-in block, then a `questionnaire` block holding just that one question, then the next markdown lead-in, then its question, and so on. **One question per `questionnaire` block**, never all of them in one. A `prioritize` block, when warranted, is just another block in the flow with its own prose lead-in.
-- **Not connected (paste):** emit a **Markdown document** with prose paragraphs and **one ` ```questionnaire ` fence per question** set between them. Each fence is a complete JSON object (`version`, `questions` with that single question). Prose lives between the fences, as ordinary Markdown.
+- **Not connected (paste):** emit a **Markdown document** with prose paragraphs and **one ` ```questionnaire ` fence per question** set between them — and wrap that whole document in **one single outer code fence** (see the Output contract) so it's one copy button. Each inner fence is a complete JSON object (`version`, `questions` with that single question); prose lives between the inner fences, as ordinary Markdown, all inside the one outer fence.
 
 A tightly-coupled pair of questions may share one fence when they truly have the same setup and no prose belongs between them — but the default is one question per fence with its own lead-in. When in doubt, split.
 
@@ -115,7 +114,7 @@ A two-way choice is a **questionnaire**, never a prioritize ("ranking" two items
 ```jsonc
 {
   "version": "1",                          // required, always "1" — the SCHEMA version, not the skill's
-  "skill_version": "2.2",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
+  "skill_version": "2.3",                  // REQUIRED — must match this skill's frontmatter version (a DIFFERENT field from "version")
   "title": "<short title>",                // recommended
   "source_summary": "<one sentence>",      // optional
   "routing": {                             // omit when self-answering
@@ -207,8 +206,11 @@ If you don't know the document id, ask the user which routed document they mean 
 When you are **NOT** routing over MCP, deliver as paste. On the `route_document` path the platform validates the typed `blocks[]` for you, so the fence/quote hardening below does **not** apply — but the field shapes (key names, the `version` vs `skill_version` distinction) are still the correct shapes you pass as typed arguments.
 
 **Output two things, in this exact order, nothing else:**
-1. The Markdown document. For an ASK output this is **plain Markdown — prose paragraphs with one ` ```questionnaire ` fence per question (plus any ` ```prioritize ` fence) interleaved between them**, per the "document, not a form" rule. Do **not** wrap the whole document in one outer code block; the inner ` ```questionnaire ` / ` ```prioritize ` fences each copy verbatim, which is what protects their JSON. (The "whole document inside one fenced code block" form is only for the degenerate sole-component case the document rule discourages.) **Use straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string inside the fences. A code fence is copied verbatim; unfenced JSON gets its quotes "smart-quoted" by many chat surfaces, which breaks `JSON.parse` and renders raw text instead of the form.
-2. A short closing message in the user's language (below).
+1. **The whole Markdown document, inside ONE single outer code fence** — nothing else in that fence, and never split across two. This is the copy-once/paste-once contract: the user reads your reply, clicks the code block's **one** copy button, and pastes the whole thing into PassbackAI in a single gesture. The inner *structure* is unchanged — for an ASK output it is still **prose paragraphs with one ` ```questionnaire ` fence per question (plus any ` ```prioritize ` fence) interleaved between them**, per the "document, not a form" rule — you are only wrapping that entire document in one outer fence.
+   - **Use a FOUR-backtick outer fence** (` ```` `) so it can contain the inner three-backtick ` ```questionnaire ` / ` ```prioritize ` fences without the nesting breaking. If the document's own prose somehow contains a four-backtick fence, add more backticks to the outer fence than any fence inside it. The outer fence has no info-string (just the bare ` ```` ` line).
+   - The chat surface renders this as a **single code block with one copy button**, and that button copies the *inner* content only (the outer fence markers are stripped) — so what lands on the clipboard is the exact Markdown document, inner ` ```questionnaire ` fences and all, ready to paste.
+   - Wrapping everything in the outer fence also means the whole payload copies **verbatim**, which protects the JSON. **Use straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string inside the fences; smart quotes break `JSON.parse` and render raw text instead of the form.
+2. A short closing message in the user's language (below), **outside** the outer fence (so it isn't copied).
 
 No commentary, no category breakdown, no schema explanation.
 
@@ -216,17 +218,18 @@ No commentary, no category breakdown, no schema explanation.
 - It must `JSON.parse` cleanly — balanced `{ } [ ]`, no trailing commas, straight `"` quotes only.
 - Exact key names, matched literally: root `version` (`"1"`), `questions` (non-empty); each question `id`, `question` (**never `q`**), `options`. Optional: `title`, `skill_version`, `source_summary`, `routing`, `section`, `multi`, `recommended`, `open_field`.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- `version` (schema, always `"1"`) vs `skill_version` (this skill's, `"2.2"`) are different fields. If unsure of your own skill version, **omit `skill_version`** rather than guess a wrong low value (which would trigger a false "update your skill" banner).
-- Each ` ```questionnaire ` fence is its own complete object — every fence carries `version` (and the same `skill_version`); the `questions` array inside a per-question fence holds that one question. Multiple fences in one document is the norm, not an error.
+- `version` (schema, always `"1"`) vs `skill_version` (this skill's, `"2.3"`) are different fields. If unsure of your own skill version, **omit `skill_version`** rather than guess a wrong low value (which would trigger a false "update your skill" banner).
+- Each ` ```questionnaire ` fence is its own complete object — every fence carries `version` (and the same `skill_version`); the `questions` array inside a per-question fence holds that one question. Multiple inner fences in one document is the norm, not an error.
+- **Everything lives inside the one outer fence.** The whole document — heading, prose, every inner ` ```questionnaire ` / ` ```prioritize ` fence — is inside a single four-backtick outer fence, so the user copies it all in one click. The closing message stays outside it.
 
 ### Closing message (paste path)
 
-After the document, output exactly this (translate to the user's language) — say **document**, not "JSON", because the output is a document with the questions set into it:
+After the document, output exactly this (translate to the user's language) — say **document** / **block**, not "JSON", because the output is a document with the questions set into it, and it sits in one code block:
 
 ```
 X questions.
 
-1. Copy the document above
+1. Copy the block above
 2. Open https://passbackai.com
 3. Click Paste
 ```
@@ -236,7 +239,7 @@ Hebrew variant:
 ```
 X שאלות.
 
-1. העתק את המסמך למעלה
+1. העתק את הבלוק למעלה
 2. פתח את https://passbackai.com
 3. לחץ Paste
 ```
@@ -255,39 +258,33 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 
 **Input:** "Mobile guest check-in feature — sending the open decisions to Elad. Haven't decided PIN vs room number; biometric debate (v1 or defer); legal must confirm retention. Also: we have four launch markets queued — US, UK, Germany, Japan — and need Elad to set the rollout order."
 
-**Output (a document with the questions embedded — prose before each one. Connected: the same content as an interleaved `blocks[]` array, one markdown block then one questionnaire block, repeated. Paste: the Markdown below, verbatim):**
+**Output (a document with the questions embedded — prose before each one, the WHOLE thing wrapped in one outer four-backtick fence so it's one copy button. Connected: the same content as an interleaved `blocks[]` array, one markdown block then one questionnaire block, repeated. Paste: the single fenced block below, verbatim):**
 
+> ````
 > # Guest check-in — a few open decisions
 >
 > Hi Elad — these are the three things we didn't lock on the mobile check-in brief, plus the launch order. None of this is a test; pick what fits or leave a note, and send your answers back to me when you're done.
 >
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole. Where do you want to land?
 >
-> ````
 > ```questionnaire
-> {"version":"1","skill_version":"2.2","questions":[{"id":"q1","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN"}]}
+> {"version":"1","skill_version":"2.3","questions":[{"id":"q1","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN"}]}
 > ```
-> ````
 >
 > Next, biometrics. The team split on whether face/fingerprint ships in v1 or waits. Deferring keeps v1 tight and keeps a privacy review off the critical path — which is why I'd lean to deferring, but it's your call.
 >
-> ````
 > ```questionnaire
-> {"version":"1","skill_version":"2.2","questions":[{"id":"q2","question":"Should we offer biometric authentication in v1?","options":["No, defer to v2","Optional opt-in","Required"],"recommended":"No, defer to v2"}]}
+> {"version":"1","skill_version":"2.3","questions":[{"id":"q2","question":"Should we offer biometric authentication in v1?","options":["No, defer to v2","Optional opt-in","Required"],"recommended":"No, defer to v2"}]}
 > ```
-> ````
 >
 > Last on the spec: retention. The brief flags legal sign-off as pending, so if this needs to go through someone, tell me who.
 >
-> ````
 > ```questionnaire
-> {"version":"1","skill_version":"2.2","questions":[{"id":"q3","question":"What is the data retention policy?","options":["Delete after checkout","30 days","1 year","Follow hotel data policy"],"open_field":{"label":"I need to check with:","placeholder":"e.g. legal team, DPO"}}]}
+> {"version":"1","skill_version":"2.3","questions":[{"id":"q3","question":"What is the data retention policy?","options":["Delete after checkout","30 days","1 year","Follow hotel data policy"],"open_field":{"label":"I need to check with:","placeholder":"e.g. legal team, DPO"}}]}
 > ```
-> ````
 >
 > Separately — we have four launch markets queued and no order. Drag them into the sequence you'd ship them in:
 >
-> ````
 > ```prioritize
 > {"version":"1","items":[{"id":"us","label":"United States"},{"id":"uk","label":"United Kingdom"},{"id":"de","label":"Germany"},{"id":"jp","label":"Japan"}]}
 > ```
@@ -296,14 +293,18 @@ Explicit "we haven't decided X" / placeholder ("TBD", "ask the team") / conflict
 ```
 3 questions, plus a launch-order ranking.
 
-1. Copy the document above
+1. Copy the block above
 2. Open https://passbackai.com
 3. Click Paste
 ```
 
-Note the shape: a heading, then **prose that sets up each question before the question appears**, each question in its **own fence**, the four launch markets in a `prioritize` (the decision is **order**, ≥3 concrete mutually-rankable peers) — not crammed into one form block, and no per-question `context` field (the setup is the prose above it). Note also: q1 and q2 carry a `recommended` because there's an honest lean, and the *why* sits in the prose lead-in, not in `context`; q1 and q2 omit `open_field`, so they keep the **default Other** with its edit-into-Other pencil, while q3 opts into a directed `open_field.label` ("I need to check with:") and deliberately gives up that pencil. The "send it back to me" instruction is in the opening prose because the embedded renderer won't show `routing`. *(The `` ```…``` `` quad-backtick wrappers above are only so this doc can show a fence inside a fence — your real output uses plain triple-backtick fences.)*
+Note the shape: **one outer four-backtick fence wraps the entire document** — heading, prose, and every inner three-backtick component fence — so the user copies it in a single click and pastes once. Inside it: a heading, then **prose that sets up each question before the question appears**, each question in its **own inner fence**, the four launch markets in a `prioritize` (the decision is **order**, ≥3 concrete mutually-rankable peers) — not crammed into one form block, and no per-question `context` field (the setup is the prose above it). Note also: q1 and q2 carry a `recommended` because there's an honest lean, and the *why* sits in the prose lead-in, not in `context`; q1 and q2 omit `open_field`, so they keep the **default Other** with its edit-into-Other pencil, while q3 opts into a directed `open_field.label` ("I need to check with:") and deliberately gives up that pencil. The "send it back to me" instruction is in the opening prose because the embedded renderer won't show `routing`. *(That leading/trailing `` ```` `` is the real four-backtick outer fence — it renders as one code block with one copy button, and the copy strips it, leaving the inner three-backtick fences intact on the clipboard. The blockquote `>` marks are only this doc's way of showing the block; your real output has no `>`.)*
 
 ## Changelog
+
+### v2.3 (2026-07-02)
+- **Copy once, paste once.** The paste output is now the whole document inside **one outer four-backtick fence** — a single code block with one copy button — instead of prose interleaved with separate fences the user had to select by hand. The inner "document, not a form" structure is unchanged; only the outer wrapper is new.
+- **Ask REVIEW vs ASK when it isn't specified.** When the user hasn't said whether they want a clean feedback summary (REVIEW) or that summary with clarification questions on the undecided/missing parts (ASK), the skill now asks them to pick before building, instead of silently inferring. PULL is still detected without a question.
 
 ### v2.2 (2026-06-30)
 - **Lean in with `recommended`.** Reach for `recommended` by default on option questions where there's an honest lean (most of them), not rarely — the *why* lives in the prose lead-in. Pairs with the renderer making the recommended star clearer at rest.
