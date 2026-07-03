@@ -18,21 +18,28 @@
 > MCP route in detail and [§10](#10-delivery-paths--mcp-route-vs-paste) compares the two.
 >
 > **Read this first — the model, not a single example.** An interactive component is a *typed
-> decision request* embedded in a Markdown document. There is a **growing family** of them, not a
-> single form. Today two are shipped:
+> decision request* embedded in a Markdown document. There is an **open, growing PALETTE** of them,
+> not a single form — pick ONE primitive PER unclear point, by verb, and weave it into prose (prose
+> itself is a response channel: the reviewer annotates it, so settled thinking stays prose). Shipped
+> today:
 >
 > | Component | Fence tag | The verb | Use it to… |
 > |---|---|---|---|
-> | **Questionnaire** | ` ```questionnaire ` | **choose** | ask the user to pick from options (single/multi) or type a free-text answer |
+> | **Single choice** | ` ```single-choice ` | **choose one** | ask the user to pick exactly one of 2–4 options |
+> | **Multi choice** | ` ```multi-choice ` | **choose many** | ask the user to pick all options that apply |
+> | **Open question** | ` ```open-question ` | **write** | ask the user to type a free-text answer |
 > | **Prioritize** | ` ```prioritize ` | **order** | ask the user to rank/reorder a short list by priority |
+> | **Questionnaire** | ` ```questionnaire ` | **group** | present a batch of 3+ tightly-related questions as one unit |
 >
 > More are planned (see [§7](#7-the-family-is-open--adding-a-component)). **Do not assume the family
-> is "a questionnaire".** Pick the component that matches the decision you need from the user; you
-> can embed several, of mixed types, in one document.
+> is "a questionnaire"** — the questionnaire is the GROUP primitive, not the default vessel for every
+> ambiguity. Pick the component that matches the decision you need from the user; you can embed
+> several, of mixed types, in one document.
 >
-> Source of truth: `src/markdown.jsx` (`parseBlocks` — the fence dispatch), `src/utils/questionnaire.js`
-> and `src/utils/prioritize.js` (per-component parser/validator/export), `public/skills/question-extractor.md`
-> (the authoring skill for the Questionnaire component), `src/domain.js` (types). The MCP delivery path is
+> Source of truth: `src/utils/component-registry.js` (the registry every consumer iterates — one entry per
+> component), `src/markdown.jsx` (`parseBlocks` — the fence dispatch), `src/utils/questionnaire.js`,
+> `src/utils/prioritize.js` and `src/utils/question-primitives.js` (per-component parser/validator/export),
+> `public/skills/passback.md` (the authoring skill), `src/domain.js` (types). The MCP delivery path is
 > `api/_lib/mcp-tools.js` (the `route_document` / `get_components_spec` / `list_responses` tools) and
 > `api/_lib/route-document-blocks.js` (the typed `blocks[]` union — the same components as typed arguments).
 
@@ -67,8 +74,8 @@ added later — must agree with this file.**
 |---|---|
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
-| **Current `skill_version`** | `1.5` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r7` · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Current `skill_version`** | `3.0` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
+| **Spec revision** | `r8` · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -97,7 +104,7 @@ Two numbers travel with a questionnaire, and conflating them is what caused the 
 | Field | What it versions | Values | Gates rendering? |
 |---|---|---|---|
 | `version` | **The wire schema** — the shape this doc describes. | Always the literal string `"1"`. | **YES.** A block whose `version` isn't `"1"` for its tag is rejected. |
-| `skill_version` | **The authoring skill build** that emitted the JSON (questionnaire only). | `"1.5"` today; `"1.2"`, `"1.4"`, … are older builds of the *same* skill. | **NO.** Optional metadata. Drives only the in-app "your skill is outdated" banner + the export footer. Safe to bump or omit. |
+| `skill_version` | **The authoring skill build** that emitted the JSON (any primitive may carry it). | `"3.0"` today; `"1.2"`, `"1.5"`, … are older builds of the *same* skill. | **NO.** Optional metadata. Drives only the in-app "your skill is outdated" banner + the export footer. Safe to bump or omit. |
 
 So a "1.2" payload and a "1.5" payload are **the same schema** authored by
 **two builds of the same skill**. Both render correctly on **both** domains, because `recommended`
@@ -260,45 +267,58 @@ server-side.)
 
 ---
 
-## 2. COMPONENT INDEX
+## 2. COMPONENT INDEX — the palette
 
-**There are exactly TWO renderable block types. This is the whole set:**
+**The palette is OPEN and growing. Pick ONE primitive per unclear point, by verb — these are the renderable block types today:**
 
-| § | Component | Fence tag (the ONLY valid ones) | Choose it when you need the user to… |
+| § | Component | Fence tag | Verb — choose it when you need the user to… |
 |---|---|---|---|
-| [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | pick from options, multi-select, or type a free-text answer |
-| [§4](#4-component-prioritize--order) | **Prioritize** | ` ```prioritize ` | rank / reorder a short list by priority |
+| [§2.5](#25-the-standalone-question-primitives) | **Single choice** | ` ```single-choice ` | **choose one** — pick exactly one of 2–4 listed options |
+| [§2.5](#25-the-standalone-question-primitives) | **Multi choice** | ` ```multi-choice ` | **choose many** — pick all options that apply |
+| [§2.5](#25-the-standalone-question-primitives) | **Open question** | ` ```open-question ` | **write** — type a free-text answer (a name, a date, a reason) |
+| [§4](#4-component-prioritize--order) | **Prioritize** | ` ```prioritize ` | **order** — rank / reorder a short list by priority |
+| [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | **group** — a batch of 3+ tightly-related questions presented as one unit |
+
+**Prose is itself a response channel.** Settled thinking stays prose — the reviewer annotates it directly.
+Weave the primitives INTO the prose, each one set up by the sentence before it; don't stack them into a form.
 
 ### 2.1 NOT block types — do not invent fence tags
 
-A fenced block whose info-string is anything other than the two above renders as a **plain code block,
+A fenced block whose info-string is anything other than the palette above renders as a **plain code block,
 silently, with no error** — so a wrong tag looks like it "did nothing". None of these are real (a
 non-exhaustive list of tempting hallucinations):
 
-` ```multiple-choice ` · ` ```open-question ` · ` ```match ` · ` ```quiz ` · ` ```poll ` ·
-` ```survey ` · ` ```form ` · ` ```rank ` · ` ```question ` · ` ```answer ` — **and anything else.**
-The renderer knows only `questionnaire` and `prioritize`.
+` ```multiple-choice ` (the real tags are `single-choice` / `multi-choice`) · ` ```match ` · ` ```quiz ` ·
+` ```poll ` · ` ```survey ` · ` ```form ` · ` ```rank ` · ` ```question ` · ` ```answer ` — **and anything
+else.** The renderer knows only the tags in the index above.
 
 ### 2.2 Common mistakes
 
-- **Question *types* are MODES inside one ` ```questionnaire ` block — not separate blocks.**
-  Single-select, multi-select (`multi: true`), and free-text (`options: []`) are the same question shape,
-  listed together in the one `questions` array. **Do not** create separate fenced blocks for "multiple
-  choice", "open question", or "matching" — every question, of any mode, goes inside the single
-  `questionnaire` block. (See [§3.2 Question modes](#32-question-modes).)
-- **Ranking is the separate ` ```prioritize ` component**, not a question mode. Everything a user
-  *chooses* is a questionnaire question; the one thing they *order* is prioritize.
-- **One info-string, lowercase, nothing after it** — the opening fence is exactly ` ```questionnaire ` or
-  ` ```prioritize ` on its own line.
+- **One decision → one standalone primitive, woven into prose.** Reach for ` ```questionnaire ` only to
+  GROUP 3+ tightly-related questions into one unit; a lone question travels as its own
+  ` ```single-choice ` / ` ```multi-choice ` / ` ```open-question ` block with a prose lead-in.
+  (Inside a `questionnaire`, the same three forms exist as question modes — `multi: true`,
+  `options: []` — see [§3.2 Question modes](#32-question-modes).)
+- **Ranking is the separate ` ```prioritize ` component**, never a question mode: what a user
+  *chooses* is a choice/questionnaire; the one thing they *order* is prioritize.
+- **One info-string, lowercase, nothing after it** — the opening fence is exactly the component tag
+  (e.g. ` ```single-choice `) on its own line.
 
-### 2.3 Copy-paste starter — prose + one prioritize + one questionnaire
+### 2.3 Copy-paste starter — a woven document (prose + the palette)
 
-A single document mixing prose with both block types. Renders top-to-bottom: a line of prose, a draggable
-priority list, then a three-question form (single-select with a recommended badge, a multi-select, and a
-free-text field).
+One document, one primitive per unclear point, each set up by the prose before it. Renders top-to-bottom:
+prose, a single choice (with a recommended badge), a draggable priority list, and a free-text answer.
 
 ````markdown
-Here's the Q3 plan. Rank the regions, then answer the two open calls.
+Here's the Q3 plan. Three calls are still open — each one below, in place.
+
+First, the auth method. Magic link is the lightest to ship, which is why I lean there.
+
+```single-choice
+{ "version": "1", "question": "Which auth method?", "options": ["PIN", "Room number", "Magic link"], "recommended": "Magic link" }
+```
+
+Next, the regions. Drag into rollout order — top ships first.
 
 ```prioritize
 { "version": "1", "items": [
@@ -308,14 +328,39 @@ Here's the Q3 plan. Rank the regions, then answer the two open calls.
 ] }
 ```
 
-```questionnaire
-{ "version": "1", "questions": [
-  { "id": "q1", "question": "Which auth method?", "options": ["PIN", "Room number", "Magic link"], "recommended": "Magic link" },
-  { "id": "q2", "question": "Which regions need localization first?", "multi": true, "options": ["EU", "US", "APAC"] },
-  { "id": "q3", "question": "Target launch date?", "options": [], "open_field": { "label": "Target date:" } }
-] }
+Last: the launch date is genuinely open — type what you're targeting.
+
+```open-question
+{ "version": "1", "question": "Target launch date?", "placeholder": "e.g. 2026-09-01" }
 ```
 ````
+
+### 2.5 The standalone question primitives — `single-choice` / `multi-choice` / `open-question`
+
+The per-ambiguity forms of a question: ONE decision per fence, flat fields, no envelope. All three share
+the questionnaire's answer semantics (the renderer normalizes each to a one-question form internally), so
+`recommended`, `open_field`, notes, and the export shape behave exactly as documented in [§3](#3-component-questionnaire--choose).
+
+| Field | `single-choice` | `multi-choice` | `open-question` |
+|---|---|---|---|
+| `version` | required, `"1"` | required, `"1"` | required, `"1"` |
+| `question` | required, non-empty | required, non-empty | required, non-empty |
+| `options` | required, **2–4** strings | required, **2–6** strings | — (no options; the answer field IS the answer) |
+| `recommended` | optional, ONE option label | optional, ARRAY of option labels | — |
+| `placeholder` | — | — | optional, example text in the empty field |
+| `open_field` / `context` / `id` / `routing` / `skill_version` | optional, as in §3 | optional, as in §3 | `context`/`id`/`routing`/`skill_version` optional |
+
+```single-choice
+{ "version": "1", "question": "Which auth method ships in v1?", "options": ["Magic link", "Room number + PIN"], "recommended": "Magic link" }
+```
+
+```multi-choice
+{ "version": "1", "question": "Which locales at launch?", "options": ["English", "Hebrew", "Arabic"], "recommended": ["English", "Hebrew"] }
+```
+
+```open-question
+{ "version": "1", "question": "What is the data-retention constraint from legal?", "placeholder": "e.g. delete 30 days after checkout" }
+```
 
 ---
 

@@ -1,12 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://passbackai.com/schema.json",
-  "title": "PassbackAI interactive components — there are only two: questionnaire and prioritize",
-  "description": "JSON Schema for the interactive components PassbackAI renders inside a pasted Markdown document. There are EXACTLY TWO renderable block types, each a bare JSON object inside its own fenced block: ```questionnaire and ```prioritize. No other fence tag renders (```multiple-choice, ```open-question, ```quiz, ```poll, etc. are NOT block types — they show as plain code). Question types (single-select, multi-select via `multi:true`, free-text via empty `options`) are MODES inside one questionnaire block, never separate blocks. A payload validates against exactly one component. Human spec: https://passbackai.com/ask ; raw Markdown: https://passbackai.com/ask.md — this file is kept in sync with them in the same commit.",
-  "$comment": "Spec revision r6 (2026-06-21). The fence contract: only `questionnaire` and `prioritize` render; everything else is a plain code block. This JSON Schema validates the JSON INSIDE a fence — it cannot enforce the fence tag itself, so the renderer contract is documented in /ask.md §2. Wire `version` is the string \"1\" for every component; `skill_version` is unrelated authoring-build metadata. Guards not expressible here, noted in `description` fields: (a) questionnaire question ids should be unique — duplicates collide answer state but are not rejected; (b) prioritize item ids MUST be unique — a duplicate rejects the block; (c) `recommended` and `routing.return_prompt` cross-field rules. Validate structure here, then consult /ask.md for the full guard list and the fence contract.",
+  "title": "PassbackAI interactive components — an open palette, one primitive per unclear point",
+  "description": "JSON Schema for the interactive components PassbackAI renders inside a pasted Markdown document. The palette is OPEN and growing; pick the primitive that fits each individual ambiguity: ```single-choice (choose one), ```multi-choice (choose many), ```open-question (write), ```prioritize (order), ```questionnaire (a GROUP of tightly-related questions presented as one unit). Prose is itself a response channel — the reviewer annotates it — so settled thinking stays prose. Each component is a bare JSON object inside its own fenced block; no other fence tag renders (```quiz, ```poll, ```multiple-choice are NOT block types — they show as plain code). A payload validates against exactly one component. Human spec: https://passbackai.com/ask ; raw Markdown: https://passbackai.com/ask.md — this file is kept in sync with them in the same commit.",
+  "$comment": "Spec revision r7 (2026-07-02). The fence contract: only the component tags named in oneOf render; everything else is a plain code block. This JSON Schema validates the JSON INSIDE a fence — it cannot enforce the fence tag itself, so the renderer contract is documented in /ask.md §2. Wire `version` is the string \"1\" for every component; `skill_version` is unrelated authoring-build metadata. Guards not expressible here, noted in `description` fields: (a) questionnaire question ids should be unique — duplicates collide answer state but are not rejected; (b) prioritize item ids MUST be unique — a duplicate rejects the block; (c) `recommended` and `routing.return_prompt` cross-field rules. Validate structure here, then consult /ask.md for the full guard list and the fence contract.",
   "oneOf": [
-    { "$ref": "#/$defs/questionnaire" },
-    { "$ref": "#/$defs/prioritize" }
+    { "$ref": "#/$defs/single-choice" },
+    { "$ref": "#/$defs/multi-choice" },
+    { "$ref": "#/$defs/open-question" },
+    { "$ref": "#/$defs/prioritize" },
+    { "$ref": "#/$defs/questionnaire" }
   ],
   "$defs": {
     "routing": {
@@ -18,10 +21,91 @@
         "return_prompt": { "type": "string" }
       }
     },
+    "open_field": {
+      "type": "object",
+      "description": "Overrides the default \"Other:\" label with a directed escape-hatch (e.g. \"I need to check with:\").",
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "placeholder": { "type": "string" }
+      }
+    },
+    "single-choice": {
+      "type": "object",
+      "title": "Single choice (verb: choose one)",
+      "description": "ONE decision, pick exactly one option. The per-ambiguity form of a choice — reach for `questionnaire` only to group several tightly-related questions.",
+      "required": ["version", "question", "options"],
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "description": "Optional stable id; defaults to the block's document position." },
+        "question": { "type": "string", "minLength": 1, "description": "The prompt. The key must be `question` — never `q`/`text`/`prompt`." },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "string" },
+          "description": "2–4 short, genuinely distinct labels (plain strings). Do not include an \"Other\" entry — the renderer adds a free-text row automatically. Zero real options → use open-question instead."
+        },
+        "context": { "type": "string" },
+        "recommended": { "type": "string", "description": "Mark-only nudge: must exactly match an option label; never pre-selects." },
+        "open_field": { "$ref": "#/$defs/open_field" },
+        "skill_version": { "type": "string" },
+        "routing": { "$ref": "#/$defs/routing" }
+      },
+      "examples": [
+        { "version": "1", "question": "Which auth method ships in v1?", "options": ["Magic link", "Room number + PIN"], "recommended": "Magic link" }
+      ]
+    },
+    "multi-choice": {
+      "type": "object",
+      "title": "Multi choice (verb: choose many)",
+      "description": "ONE decision where more than one option may genuinely apply (features, regions, stakeholders). Never for mutually-exclusive picks — that is single-choice.",
+      "required": ["version", "question", "options"],
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "description": "Optional stable id; defaults to the block's document position." },
+        "question": { "type": "string", "minLength": 1, "description": "The prompt. The key must be `question` — never `q`/`text`/`prompt`." },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "string" },
+          "description": "2–6 short, parallel labels (plain strings). Do not include an \"Other\" entry — the renderer adds a free-text row automatically."
+        },
+        "context": { "type": "string" },
+        "recommended": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Mark-only nudge: option labels to badge; each must exactly match an option label; never pre-selects."
+        },
+        "open_field": { "$ref": "#/$defs/open_field" },
+        "skill_version": { "type": "string" },
+        "routing": { "$ref": "#/$defs/routing" }
+      },
+      "examples": [
+        { "version": "1", "question": "Which locales at launch?", "options": ["English", "Hebrew", "Arabic"], "recommended": ["English", "Hebrew"] }
+      ]
+    },
+    "open-question": {
+      "type": "object",
+      "title": "Open question (verb: write)",
+      "description": "A genuinely open point with no enumerable options — the reviewer types a free-text answer (a name, a date, a description, a reason).",
+      "required": ["version", "question"],
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "description": "Optional stable id; defaults to the block's document position." },
+        "question": { "type": "string", "minLength": 1, "description": "The prompt. The key must be `question` — never `q`/`text`/`prompt`." },
+        "placeholder": { "type": "string", "description": "Optional example text shown inside the empty answer field." },
+        "context": { "type": "string" },
+        "skill_version": { "type": "string" },
+        "routing": { "$ref": "#/$defs/routing" }
+      },
+      "examples": [
+        { "version": "1", "question": "What is the data-retention constraint from legal?", "placeholder": "e.g. delete 30 days after checkout" }
+      ]
+    },
     "questionnaire": {
       "type": "object",
-      "title": "Questionnaire (verb: choose)",
-      "description": "A list of questions; each is a single/multi-select or a pure free-text field. Embedded as a ```questionnaire fence, or pasted as a bare JSON object on its own.",
+      "title": "Questionnaire (verb: group)",
+      "description": "A GROUP of tightly-related questions presented as one unit; each is a single/multi-select or a pure free-text field. Prefer the standalone per-ambiguity primitives (single-choice / multi-choice / open-question) woven into prose; group only when 3+ questions truly form one decision cluster. Embedded as a ```questionnaire fence, or pasted as a bare JSON object on its own.",
       "required": ["version", "questions"],
       "properties": {
         "version": { "const": "1", "description": "The wire schema version. Always the string \"1\" — the number 1 is rejected." },
@@ -32,9 +116,12 @@
         },
         "title": { "type": "string" },
         "source_summary": { "type": "string" },
-        "skill_version": { "type": "string", "description": "Authoring-skill build tag (currently \"1.5\"). Optional metadata; does not gate rendering." },
+        "skill_version": { "type": "string", "description": "Authoring-skill build tag. Optional metadata; does not gate rendering." },
         "routing": { "$ref": "#/$defs/routing" }
-      }
+      },
+      "examples": [
+        { "version": "1", "questions": [ { "id": "q1", "question": "Which auth method ships in v1?", "options": ["Magic link", "Room number + PIN"] } ] }
+      ]
     },
     "question": {
       "type": "object",
@@ -57,15 +144,7 @@
             { "type": "array", "items": { "type": "string" } }
           ]
         },
-        "open_field": {
-          "type": "object",
-          "description": "Overrides the default \"Other:\" label. Required when `options` is []. ",
-          "required": ["label"],
-          "properties": {
-            "label": { "type": "string", "minLength": 1 },
-            "placeholder": { "type": "string" }
-          }
-        },
+        "open_field": { "$ref": "#/$defs/open_field" },
         "allow_note": { "type": "boolean", "description": "Always omit — every option-bearing question always shows a note field." }
       },
       "allOf": [
@@ -98,8 +177,12 @@
             "label": { "type": "string" }
           }
         },
+        "skill_version": { "type": "string" },
         "routing": { "$ref": "#/$defs/routing" }
-      }
+      },
+      "examples": [
+        { "version": "1", "items": [ { "id": "us", "label": "United States" }, { "id": "uk", "label": "United Kingdom" }, { "id": "de", "label": "Germany" } ] }
+      ]
     },
     "item": {
       "type": "object",
