@@ -74,7 +74,7 @@ added later — must agree with this file.**
 |---|---|
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
-| **Current `skill_version`** | `3.1` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
+| **Current `skill_version`** | `3.2` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
 | **Spec revision** | `r8` · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
@@ -104,7 +104,7 @@ Two numbers travel with a questionnaire, and conflating them is what caused the 
 | Field | What it versions | Values | Gates rendering? |
 |---|---|---|---|
 | `version` | **The wire schema** — the shape this doc describes. | Always the literal string `"1"`. | **YES.** A block whose `version` isn't `"1"` for its tag is rejected. |
-| `skill_version` | **The authoring skill build** that emitted the JSON (any primitive may carry it). | `"3.1"` today; `"1.2"`, `"1.5"`, … are older builds of the *same* skill. | **NO.** Optional metadata. Drives only the in-app "your skill is outdated" banner + the export footer. Safe to bump or omit. |
+| `skill_version` | **The authoring skill build** that emitted the JSON (any primitive may carry it). | `"3.2"` today; `"1.2"`, `"1.5"`, … are older builds of the *same* skill. | **NO.** Optional metadata. Drives only the in-app "your skill is outdated" banner + the export footer. Safe to bump or omit. |
 
 So a "1.2" payload and a "1.5" payload are **the same schema** authored by
 **two builds of the same skill**. Both render correctly on **both** domains, because `recommended`
