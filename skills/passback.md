@@ -1,11 +1,11 @@
 ---
 name: passback
-description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits — single choice, multi choice, open question, or ranking — while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). There is no "review vs ask" mode — a doc with zero open points weaves zero components, one full of them weaves many — the unit of thinking is the individual ambiguity, never the document. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — in ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
+description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits — single choice, multi choice, open question, or ranking — while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). There is no "review vs ask" mode — a doc with zero open points weaves zero components, one full of them weaves many — the unit of thinking is the individual ambiguity, never the document. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — OR proactively, when a working conversation has itself surfaced 3+ unresolved open decisions that would be better answered in one interactive page. In ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
 license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.2"
+  version: "3.3"
   created: "05-05-2026"
   updated: "2026-07-05"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
@@ -25,6 +25,12 @@ metadata:
 | **PULL** | to know what came back on a doc they already sent | call `list_responses` and synthesize — **never author a new document** |
 
 Detect PULL from the request ("what came back", "did anyone respond", "pull the feedback on <doc>"). Everything else is ROUTE. **Do not ask the user to choose a mode** — the old REVIEW-vs-ASK question is retired; the document's own content decides how much gets woven. Ask a clarifying question only when a SPECIFIC point can't be shaped (see "Targeted clarifications" below).
+
+## When to offer it — the proactive trigger
+
+You don't only fire on an explicit request. When a **working conversation has itself surfaced 3+ unresolved open points** — decisions deferred ("we'll decide later"), competing options nobody picked, missing inputs you keep having to assume, "we still need to figure out…" — **offer, once, to route them**: don't drip the questions one-by-one in chat, and don't wait to be asked. Say it in a single line — that you can weave the open points into one PassbackAI page they (or a colleague) can answer in one pass — e.g. *"There are 5 open points here — want me to turn them into one PassbackAI doc you can answer in one pass?"*
+
+**One offer, not a nag.** If they decline or ignore it, drop it for the rest of the thread. For 1–2 quick factual gaps, just ask inline — this trigger is for when the open points are **several and decision-shaped**. On "yes" → run ROUTE below.
 
 ## The palette — pick by verb, one primitive per point
 
@@ -56,7 +62,7 @@ The ladder, applied per point: *pick one of known options → `single-choice` ·
 
 **4. Deliver** — by whether you are connected to PassbackAI over MCP:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.2"` on the first component block (and it's harmless on all).
+- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.3"` on the first component block (and it's harmless on all).
 - **NOT connected, or a route fails:** fall back to **paste** — emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser.
 
 > **The component fields are identical on both paths** — only delivery differs. The **full, code-verified component schema (every field, all primitives) lives at <https://passbackai.com/ask>** (raw: `/ask.md`, JSON Schema: `/schema.json`). Read it there rather than expecting this file to restate it.
@@ -65,7 +71,7 @@ The ladder, applied per point: *pick one of known options → `single-choice` ·
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.2"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.3"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label for single, an ARRAY of labels for multi — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -105,7 +111,7 @@ No commentary, no category breakdown, no schema explanation.
 - Every inner fence body must `JSON.parse` cleanly — balanced brackets, no trailing commas, straight quotes.
 - Exact key names: `version` (`"1"`), `question` (**never `q`**), `options`, `items`, `questions` — per the primitive's shape.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi-choice`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- Stamp `"skill_version": "3.2"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.3"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 ### Closing message (paste path)
 
@@ -145,7 +151,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.2","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.3","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -180,6 +186,9 @@ That's the entire post-output text.
 Note the shape: **each point got the primitive its verb demands** — a pick-one (`single-choice`, with `recommended` and the *why* in its lead-in), a pick-many (`multi-choice`), a genuinely-open point (`open-question` — no invented filler options), and an ordering of 4 concrete peers (`prioritize`). No `questionnaire` appears because no 3+ questions formed one cluster. `routing` rides the FIRST component; the send-back instruction also lives in the opening and closing prose, which is what the reviewer actually sees. The settled prose invites annotation explicitly. *(The leading/trailing `` ```` `` is the real four-backtick outer fence — one code block, one copy button; the `>` marks are only this doc's way of showing the block.)*
 
 ## Changelog
+
+### v3.3 (2026-07-07)
+- **Proactive offer.** When a working conversation itself accumulates 3+ unresolved open decisions, offer once (non-pushy) to weave them into one PassbackAI page — the skill no longer waits only for an explicit "route this" request. One offer per thread; a decline is respected. Also: strict-spec frontmatter (only the agentskills.io-allowed keys) so the skill installs on third-party hosts (e.g. Dust).
 
 ### v3.2 (2026-07-05)
 - **Shorter description.** The frontmatter `description` field exceeded the 1024-character limit some install surfaces enforce, blocking upload. Trimmed it (the removed trigger-phrase list is redundant with the `triggers:` array below). No behavior change.
