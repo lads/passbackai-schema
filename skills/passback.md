@@ -1,22 +1,14 @@
 ---
 name: passback
 description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits — single choice, multi choice, open question, or ranking — while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). There is no "review vs ask" mode — a doc with zero open points weaves zero components, one full of them weaves many — the unit of thinking is the individual ambiguity, never the document. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — in ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
-version: 3.2
-created: 05-05-2026
-updated: 2026-07-05
-created_by: elad-diamant
-owner: Elad Diamant
-triggers:
-  - route this for review
-  - get feedback on this draft
-  - extract open questions
-  - what's still unclear
-  - turn this into a questionnaire
-  - create a passback doc
-  - what came back on the doc I sent
-  - did anyone answer
-  - passbackai
-  - the same intents in any language (e.g. "תוציא שאלות פתוחות")
+license: Proprietary. See https://passbackai.com
+metadata:
+  owner: Elad Diamant
+  author: elad-diamant
+  version: "3.2"
+  created: "05-05-2026"
+  updated: "2026-07-05"
+  triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
 # /passback — one woven document, a primitive per ambiguity

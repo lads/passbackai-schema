@@ -1,26 +1,18 @@
 ---
 name: format-llm-feedback
-title: Format multi-point feedback as anchored Markdown for an LLM
 description: |
   Convert a list of "the LLM should fix this passage" notes into a single
   Markdown export that the originating model can apply to its last answer
   in one round-trip. Each note is paired with the verbatim quote it
   applies to AND the heading chain (or table row/column) the quote sits
   under, so the model lands every fix on its exact target.
-version: "1.0.0"
 license: MIT
-homepage: https://passbackai.com/
-documentation: https://passbackai.com/agents.md
-tags:
-  - llm-feedback
-  - markdown
-  - annotation
-  - prompt-engineering
-  - claude
-  - chatgpt
-  - cursor
-  - gemini
-  - lovable
+metadata:
+  title: Format multi-point feedback as anchored Markdown for an LLM
+  version: "1.0.0"
+  homepage: https://passbackai.com/
+  documentation: https://passbackai.com/agents.md
+  tags: "llm-feedback, markdown, annotation, prompt-engineering, claude, chatgpt, cursor, gemini, lovable"
 ---
 
 # Format multi-point feedback as anchored Markdown
