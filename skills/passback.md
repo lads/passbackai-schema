@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.3"
+  version: "3.4"
   created: "05-05-2026"
-  updated: "2026-07-05"
+  updated: "2026-07-09"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -47,22 +47,31 @@ The live palette is whatever the `route_document` tool surface (or `get_componen
 
 The ladder, applied per point: *pick one of known options → `single-choice` · pick several → `multi-choice` · order a shortlist of ≥3 peers → `prioritize` · genuinely open, nothing to enumerate → `open-question` · 3+ questions that truly form ONE decision cluster → `questionnaire` · thinking already settled → prose.* A two-way "ranking" is a `single-choice` (picking which goes first). Don't manufacture filler options to force a choice where the point is open — that's an `open-question`. Don't split a real cluster (e.g. four fields of one config) into four lonely blocks — that's a `questionnaire`.
 
-## JOB: ROUTE — scan, shape, weave, deliver
+## JOB: ROUTE — scan, shape, weave, check, deliver
 
-**1. Scan** the input for unclear points: explicit "we haven't decided X", placeholders ("TBD", "ask the team"), conflicts between stated preferences, missing info the rest assumes, implicit decisions made without flagging, undefined scope boundaries. Skip: style preferences with no consequence, questions answered later in the same text, pure implementation details (unless the input IS a tech spec). Cap the woven components at **12** — if more surface, keep the most blocking.
+**1. Scan the decision space, not the text.** The marked gaps ("TBD", "we haven't decided X", "ask the team", conflicts between stated preferences) are the easy half — a text-only scan finds only what the author already knows is open. The gaps that make a document feel *sharp* are the unmarked ones, and they surface from a three-move scan:
 
-**2. Shape** each point with the ladder above. Zero points found? Then the document routes as pure prose — that IS the right output, not a failure to extract.
+1. **Reconstruct the goal** — in one line, what must this document's work succeed at? (Ship the feature; win the account; get legal sign-off.)
+2. **Enumerate what the goal requires deciding** — independent of what the text says: the decisions this kind of work cannot proceed without.
+3. **Diff** that list against what the text actually settles. What's missing splits into: decisions made **silently** (the text assumes an answer without flagging it — surface it as a component with the silent assumption as the `recommended`) and decisions **never made** (nothing in the text covers them — the reviewer is the only one who can).
 
-**3. Weave — a document, not a form.** The reviewer should read a short document with decision points set into it. The rules that make that feel:
+Skip: style preferences with no consequence, questions answered later in the same text, pure implementation details (unless the input IS a tech spec). Cap the woven components at **12** — if more surface, keep the most blocking.
 
-- **Prose before every component.** One–three sentences that set the point up — the context, the framing, and (when you have an honest lean) the *why* behind your `recommended`. The explanation lives in this lead-in, NOT in the per-question `context` field (it renders below the prompt; leave it empty or a terse one-line caption).
+**2. Shape** each point with the ladder above — and hold options to the decision-space bar: the options of a `single-choice`/`multi-choice` must **partition the plausible answers** (mutually exclusive for single, collectively covering what a reasonable reviewer might pick — the built-in Other row catches the tail, it doesn't excuse a missing mainstream option). Every option label names a *position*, not a mood — "Room number + PIN", never "Something more secure". Zero points found? Then the document routes as pure prose — that IS the right output, not a failure to extract.
+
+**3. Weave — an argument, not an alternation.** The reviewer should read a short document whose decision points arrive in the order the *work* needs them, each set up with exactly what's needed to answer it well. The rules that make that feel:
+
+- **Order by what blocks what — and name the hinge.** Put the decision the others depend on first, and say that it's the hinge ("everything below assumes an answer here"). When one answer to X would moot Y, say so in Y's lead-in ("if you picked magic link above, skip this one"). Never default to source-text order.
+- **Prose before every component — context, tradeoff, falsifier.** One–three sentences that set the point up: the context, what each real option *costs* (what breaks or gets harder if it's wrong), and — when you set `recommended` — the *why* behind the lean plus what would change your mind ("I'd flip to magic link if support load matters more than checkout speed"). A lead-in that states the tradeoff lets the reviewer beat a coin flip without leaving the page; a lead-in that only restates the question is filler. The explanation lives in this lead-in, NOT in the per-question `context` field (it renders below the prompt; leave it empty or a terse one-line caption).
 - **Open with 1–3 sentences of plain framing** — who it's from, what it's for, that none of it is a test — and close with the send-back line. Framing lives in prose: the embedded renderer does not display `title` / `routing.return_prompt`, so never rely on those fields to be seen.
 - **One point per component.** Never lump unrelated questions into one `questionnaire` — that's the form feel this skill exists to kill.
-- **Prose is a first-class channel.** Write the settled parts as real, reviewable thinking — the reviewer can (and should) annotate them.
+- **Settled prose is claims, not narrative.** Write the settled parts as short, explicit assertions the reviewer can cheaply confirm or contest ("We're assuming EU data residency is out of scope for v1") — crisp annotation targets, not a story. Prose is a first-class response channel; give it edges.
+
+**3.5 Check — read it as the reviewer.** Before delivering, one pass through the woven document *as the recipient, cold*: for each component — is this the real question or a proxy for it? Can they answer it better than a coin flip from what's on the page alone? Would their answer actually unblock the work? Fix or cut whatever fails; if a needed fact lives only in your head, it belongs in the lead-in.
 
 **4. Deliver** — by whether you are connected to PassbackAI over MCP:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.3"` on the first component block (and it's harmless on all).
+- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.4"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
 - **NOT connected, or a route fails:** fall back to **paste** — emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser.
 
 > **The component fields are identical on both paths** — only delivery differs. The **full, code-verified component schema (every field, all primitives) lives at <https://passbackai.com/ask>** (raw: `/ask.md`, JSON Schema: `/schema.json`). Read it there rather than expecting this file to restate it.
@@ -71,7 +80,7 @@ The ladder, applied per point: *pick one of known options → `single-choice` ·
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.3"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.4"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label for single, an ARRAY of labels for multi — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -111,7 +120,7 @@ No commentary, no category breakdown, no schema explanation.
 - Every inner fence body must `JSON.parse` cleanly — balanced brackets, no trailing commas, straight quotes.
 - Exact key names: `version` (`"1"`), `question` (**never `q`**), `options`, `items`, `questions` — per the primitive's shape.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi-choice`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- Stamp `"skill_version": "3.3"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.4"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 ### Closing message (paste path)
 
@@ -151,7 +160,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.3","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.4","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -186,6 +195,9 @@ That's the entire post-output text.
 Note the shape: **each point got the primitive its verb demands** — a pick-one (`single-choice`, with `recommended` and the *why* in its lead-in), a pick-many (`multi-choice`), a genuinely-open point (`open-question` — no invented filler options), and an ordering of 4 concrete peers (`prioritize`). No `questionnaire` appears because no 3+ questions formed one cluster. `routing` rides the FIRST component; the send-back instruction also lives in the opening and closing prose, which is what the reviewer actually sees. The settled prose invites annotation explicitly. *(The leading/trailing `` ```` `` is the real four-backtick outer fence — one code block, one copy button; the `>` marks are only this doc's way of showing the block.)*
 
 ## Changelog
+
+### v3.4 (2026-07-09)
+- **The epistemic formula — genius inside, simple outside.** Scan the DECISION SPACE, not the text: reconstruct the goal, enumerate what it requires deciding, diff against what the text settles — so silently-made and never-made decisions surface, not just "TBD" markers. Options must partition the plausible answers; every lead-in states the tradeoff and the falsifier behind `recommended`; components arrive in blocking order with the hinge decision named; settled prose is written as contestable claims. New pre-delivery check: read the doc as the reviewer, cold. On the MCP path, `route_document` now returns advisory `weave.hints` when the woven structure has lapses — fix, re-route, revoke the old id.
 
 ### v3.3 (2026-07-07)
 - **Proactive offer.** When a working conversation itself accumulates 3+ unresolved open decisions, offer once (non-pushy) to weave them into one PassbackAI page — the skill no longer waits only for an explicit "route this" request. One offer per thread; a decline is respected. Also: strict-spec frontmatter (only the agentskills.io-allowed keys) so the skill installs on third-party hosts (e.g. Dust).
