@@ -9,6 +9,7 @@
     { "$ref": "#/$defs/multi-choice" },
     { "$ref": "#/$defs/open-question" },
     { "$ref": "#/$defs/prioritize" },
+    { "$ref": "#/$defs/allocate" },
     { "$ref": "#/$defs/questionnaire" }
   ],
   "$defs": {
@@ -190,6 +191,47 @@
       "properties": {
         "id": { "type": "string", "minLength": 1, "description": "Stable and unique across items." },
         "label": { "type": "string", "minLength": 1 },
+        "context": { "type": "string" }
+      }
+    },
+    "allocate": {
+      "type": "object",
+      "title": "Allocate (verb: split)",
+      "description": "Split a fixed whole across a short list of categories — the reviewer drags weighted bars that always sum to `total`. Use for a budget / effort / resource split where the point is the proportions. Embedded only inside a ```allocate fence (no bare-JSON shortcut). Item weights are rescaled to `total`.",
+      "required": ["version", "items"],
+      "properties": {
+        "version": { "const": "1" },
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/alloc-item" },
+          "description": "2+ categories, each with a unique id and a numeric `weight`. Item ids MUST be unique — a duplicate id rejects the whole block."
+        },
+        "total": { "type": "number", "exclusiveMinimum": 0, "description": "The fixed whole the weights sum to. Default 100 (percent). Provided weights are rescaled to this total." },
+        "unit": { "type": "string", "description": "Display unit for a weight — '%' (default), '$', 'pts', 'people'." },
+        "title": { "type": "string" },
+        "instruction": { "type": "string" },
+        "note_field": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "label": { "type": "string" }
+          }
+        },
+        "skill_version": { "type": "string" },
+        "routing": { "$ref": "#/$defs/routing" }
+      },
+      "examples": [
+        { "version": "1", "unit": "%", "total": 100, "items": [ { "id": "research", "label": "Research", "weight": 40 }, { "id": "build", "label": "Build", "weight": 35 }, { "id": "gtm", "label": "Go-to-market", "weight": 25 } ] }
+      ]
+    },
+    "alloc-item": {
+      "type": "object",
+      "required": ["id", "label", "weight"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable and unique across items." },
+        "label": { "type": "string", "minLength": 1 },
+        "weight": { "type": "number", "minimum": 0, "description": "The category's share of `total`." },
         "context": { "type": "string" }
       }
     }

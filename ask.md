@@ -29,6 +29,7 @@
 > | **Multi choice** | ` ```multi-choice ` | **choose many** | ask the user to pick all options that apply |
 > | **Open question** | ` ```open-question ` | **write** | ask the user to type a free-text answer |
 > | **Prioritize** | ` ```prioritize ` | **order** | ask the user to rank/reorder a short list by priority |
+> | **Allocate** | ` ```allocate ` | **split** | ask the user to split a fixed whole (a budget/effort/resource) across categories by weight |
 > | **Questionnaire** | ` ```questionnaire ` | **group** | present a batch of 3+ tightly-related questions as one unit |
 >
 > More are planned (see [§7](#7-the-family-is-open--adding-a-component)). **Do not assume the family
@@ -75,7 +76,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `3.3` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r8` · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r9` · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -130,6 +131,7 @@ interactive component, passed as **typed JSON fields** (not a string you format)
 | **Prose** | `{ "type": "markdown", "text": "…any Markdown prose…" }` |
 | **Questionnaire** | `{ "type": "questionnaire", "version": "1", "questions": [ … ] }` |
 | **Prioritize** | `{ "type": "prioritize", "version": "1", "items": [ … ] }` |
+| **Allocate** | `{ "type": "allocate", "version": "1", "items": [ { "id": …, "label": …, "weight": N }, … ] }` |
 
 The component fields (`questions`, `items`, every option, `routing`, …) are **identical** to the fenced JSON
 specified in §3–§4 — the only difference is the wrapper carries a `type` and you pass it as an argument
@@ -277,6 +279,7 @@ server-side.)
 | [§2.5](#25-the-standalone-question-primitives) | **Multi choice** | ` ```multi-choice ` | **choose many** — pick all options that apply |
 | [§2.5](#25-the-standalone-question-primitives) | **Open question** | ` ```open-question ` | **write** — type a free-text answer (a name, a date, a reason) |
 | [§4](#4-component-prioritize--order) | **Prioritize** | ` ```prioritize ` | **order** — rank / reorder a short list by priority |
+| [§4.5](#45-component-allocate--split) | **Allocate** | ` ```allocate ` | **split** — divide a fixed whole (budget / effort / resource) across categories by weight |
 | [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | **group** — a batch of 3+ tightly-related questions presented as one unit |
 
 **Prose is itself a response channel.** Settled thinking stays prose — the reviewer annotates it directly.
@@ -633,6 +636,105 @@ Act in this order.
 > **For your parser:** the tag in the header (`reader reordered` vs `reader kept the order unchanged`)
 > tells you whether the user actively changed your suggested order or endorsed it. The numbered list
 > is always the user's resolved order — act on it either way.
+
+---
+
+## 4.5 COMPONENT: Allocate — *split*
+
+A short list of categories the user **splits a fixed whole across** by dragging
+weighted bars that always sum to `total` (100% by default), plus one optional
+note for the whole split. The magnitude sibling of Prioritize (order → weight):
+like Prioritize it carries a **default** (the split you authored), so it
+**always** reports back what the user did — including "kept the allocation
+unchanged" (an affirmative endorsement). Use it when the point is the
+*proportions* — a budget across teams, effort across workstreams, headcount
+across functions.
+
+**Source of truth:** `isValidAllocate` / `parseAllocate` / `buildAllocateExport`
+in `src/utils/allocate.js`; type `Allocate` in `src/domain.js`.
+
+### 4.5.1 Schema
+
+**Top-level envelope** (validated in `isValidAllocate`):
+
+| Key | Type | Required | Notes |
+|---|---|---|---|
+| `version` | string | **YES** | Must be the literal string `"1"`. |
+| `items` | array | **YES** | Non-empty array of item objects with **unique** `id`s (below). |
+| `total` | number | no | The fixed whole the weights sum to. **Default 100.** Provided weights are rescaled to this total. |
+| `unit` | string | no | Display unit for a weight — `"%"` (default), `"$"`, `"pts"`, `"people"`. |
+| `title` | string | no | Shown as the header / export header. |
+| `instruction` | string | no | Helper line under the title. |
+| `note_field` | object | no | One optional block-level note: `{ "enabled": boolean, "label": string }`. Defaults enabled. |
+| `routing` | object | no | Same shape as the questionnaire's `routing` (`from` + `return_prompt`). |
+
+**Per-item object:**
+
+| Key | Type | Required | Notes |
+|---|---|---|---|
+| `id` | string | **YES**, non-empty | Stable, **unique** across items. Keys the resolved weights. |
+| `label` | string | **YES**, non-empty | The category text the user sees and reweights. |
+| `weight` | number | **YES** | The category's suggested share of `total` (>= 0). Rescaled so the set sums to `total`. |
+| `context` | string | no | A quiet one-line caption; also appended to the export line as `— {context}`. |
+
+### 4.5.2 Worked example
+
+````markdown
+```allocate
+{
+  "version": "1",
+  "title": "Q3 engineering capacity",
+  "instruction": "Drag each bar to reweight — the rest rebalance to keep 100%.",
+  "unit": "%",
+  "total": 100,
+  "items": [
+    { "id": "product", "label": "Product — new features", "weight": 35, "context": "viz components, sharing" },
+    { "id": "growth", "label": "Growth & GTM", "weight": 25 },
+    { "id": "infra", "label": "Infra & reliability", "weight": 15, "context": "accumulated tech debt" },
+    { "id": "support", "label": "Customer support", "weight": 15 },
+    { "id": "hiring", "label": "Hiring", "weight": 10 }
+  ],
+  "note_field": { "label": "Anything blocking this split?" },
+  "routing": { "from": "Elad", "return_prompt": "Plan against this split." }
+}
+```
+````
+
+### 4.5.3 Answers output
+
+An allocate block **always** serializes (`buildAllocateExport`), tagged with what
+the user did:
+
+- Header carries the tag — `reader reweighted` or `reader kept the allocation unchanged`:
+  - routing present → `Allocation ({tag}) → {routing.from}`
+  - title only → `## {title} ({tag})`
+  - neither → `({tag})` on its own first line.
+- One bullet per item with its final weight + unit; each line appends `(was N{unit})`
+  when the weight moved or `(unchanged)` when it didn't, plus `— {context}` when the
+  item carries one.
+- A `Total: {total}{unit}` line closes the list (the invariant the reader held).
+- A single trailing `Note: {text}` line **only** when the user wrote a note.
+- Footer: `routing.return_prompt` when routing is present.
+
+```markdown
+Allocation (reader reweighted) → Elad
+
+- Product — new features: 30% (was 35%) — viz components, sharing
+- Growth & GTM: 20% (was 25%)
+- Infra & reliability: 30% (was 15%) — accumulated tech debt
+- Customer support: 15% (unchanged)
+- Hiring: 5% (was 10%)
+
+Total: 100%
+
+Note: infra can't wait another quarter — moved from hiring and product.
+
+Plan against this split.
+```
+
+> **For your parser:** the tag in the header tells you whether the user actively
+> changed your split or endorsed it; the bullet weights are always the resolved
+> split, and each `(was N{unit})` names the delta. Act on the resolved numbers.
 
 ---
 
