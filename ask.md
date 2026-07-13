@@ -76,7 +76,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `3.3` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r9` · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r10` · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -304,6 +304,15 @@ else.** The renderer knows only the tags in the index above.
   `options: []` — see [§3.2 Question modes](#32-question-modes).)
 - **Ranking is the separate ` ```prioritize ` component**, never a question mode: what a user
   *chooses* is a choice/questionnaire; the one thing they *order* is prioritize.
+- **`allocate` vs `prioritize` — magnitude, not order.** `prioritize` answers *which comes first*
+  (1st / 2nd / 3rd); `allocate` answers *how much each gets* (weights summing to a whole). If the
+  reviewer would reply in **percentages or dollars**, it is `allocate`; in **rank**, `prioritize`.
+- **The law is TWO-SIDED — settled vs open, a floor and a ceiling.** *Ceiling:* a decision the text
+  already SETTLES stays prose — never wrap a made decision in a widget (density is the form-y feel).
+  *Floor:* a decision left OPEN always becomes a component, and when no sharp verb fits it the floor
+  is ` ```open-question `, **never demoted back to prose**. A document with real open points is never
+  component-less; one that settles everything weaves none. Restraint means not componentizing the
+  *settled* — it never means leaving the *open* unasked.
 - **One info-string, lowercase, nothing after it** — the opening fence is exactly the component tag
   (e.g. ` ```single-choice `) on its own line.
 
@@ -772,6 +781,15 @@ schema and their own copy-back serialization — additively, without changing th
 components (design notes in `docs/ideas/interactive-blocks.md`) include **suggested-change**
 (accept/reject/edit a rewrite), **verify** (confirm/correct claims), and **tradeoff/scale** (a slider
 on a spectrum).
+
+> **The admission gate — what keeps every primitive feeling *inevitable*.** A new component is
+> justified only when it names a **decision-shape not already in the palette**, with an interaction
+> **gesture isomorphic to that shape** (order → drag rank; magnitude → drag length; membership →
+> check; position-on-a-scale → drag a point). A candidate that merely re-skins a shape already
+> covered is rejected — it would make a reviewer feel a component was *forced*. This is why the
+> palette reads as a grammar of decisions rather than a gallery of widgets: each primitive is the
+> *shape* of a decision, not decoration on one. (The reverse test for authors — pick the primitive
+> whose gesture matches the decision, or fall to `open-question` — is §2.2's two-sided law.)
 
 **When you integrate, code to the family, not to one example:** check this section's component index
 (§2) for the tags that exist *today*, and pick the component that matches the decision you need —

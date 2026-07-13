@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.4"
+  version: "3.5"
   created: "05-05-2026"
-  updated: "2026-07-09"
+  updated: "2026-07-12"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -43,9 +43,17 @@ The live palette is whatever the `route_document` tool surface (or `get_componen
 | `multi-choice` | **choose many** | pick all that apply (features, regions, stakeholders) |
 | `open-question` | **write** | type a free answer (a name, a date, a reason, a description) |
 | `prioritize` | **order** | rank ≥3 concrete, comparable, already-existing peers |
+| `allocate` | **split** | divide a fixed whole (budget / effort / headcount) across categories — the point is HOW MUCH, by weight |
 | `questionnaire` | **group** | work through 3+ TIGHTLY-related questions as one unit (one decision cluster) |
 
-The ladder, applied per point: *pick one of known options → `single-choice` · pick several → `multi-choice` · order a shortlist of ≥3 peers → `prioritize` · genuinely open, nothing to enumerate → `open-question` · 3+ questions that truly form ONE decision cluster → `questionnaire` · thinking already settled → prose.* A two-way "ranking" is a `single-choice` (picking which goes first). Don't manufacture filler options to force a choice where the point is open — that's an `open-question`. Don't split a real cluster (e.g. four fields of one config) into four lonely blocks — that's a `questionnaire`.
+The ladder, applied per point: *pick one of known options → `single-choice` · pick several → `multi-choice` · order a shortlist of ≥3 peers → `prioritize` · split a fixed whole by weight → `allocate` · genuinely open, nothing to enumerate → `open-question` · 3+ questions that truly form ONE decision cluster → `questionnaire` · thinking already settled → prose.* A two-way "ranking" is a `single-choice` (picking which goes first). **`allocate` vs `prioritize`:** order is *which comes first*; allocate is *how much each gets* (magnitudes summing to a whole). If the reviewer would answer in **percentages or dollars**, it's `allocate`; if in **1st/2nd/3rd**, it's `prioritize`. Don't manufacture filler options to force a choice where the point is open — that's an `open-question`. Don't split a real cluster (e.g. four fields of one config) into four lonely blocks — that's a `questionnaire`.
+
+**The law is two-sided — a floor AND a ceiling, and both matter.**
+
+- **Ceiling (against a form-y feel):** a decision the text already *settles* stays prose. Never wrap a made decision in a widget; density is what makes a doc feel like a form.
+- **Floor (against a hollow doc):** a decision the text leaves *open* always becomes a component — and when no sharp verb fits it, the floor is `open-question`, **never a demotion back to prose**. An open point dropped to prose is a missed question, not restraint. So a doc with real open points is *never* component-less; only a doc that genuinely settles everything weaves none.
+
+The line is **settled vs open**, not "fits a shape vs doesn't." Restraint means not componentizing the *settled* — it never means leaving the *open* unasked.
 
 ## JOB: ROUTE — scan, shape, weave, check, deliver
 
@@ -71,7 +79,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 **4. Deliver** — by whether you are connected to PassbackAI over MCP:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.4"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
+- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.5"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
 - **NOT connected, or a route fails:** fall back to **paste** — emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser.
 
 > **The component fields are identical on both paths** — only delivery differs. The **full, code-verified component schema (every field, all primitives) lives at <https://passbackai.com/ask>** (raw: `/ask.md`, JSON Schema: `/schema.json`). Read it there rather than expecting this file to restate it.
@@ -80,10 +88,11 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.4"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.5"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label for single, an ARRAY of labels for multi — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
+- **`allocate`:** `items` (unique `id` + `label` + a numeric `weight` each — your proposed split); optional `total` (default 100), `unit` (`"%"` default, `"$"`, `"pts"`), `title`/`instruction`. The reviewer drags weighted bars that always sum to `total`.
 - **`questionnaire`:** the group envelope — `questions[]` where each question carries `id`, `question`, `options` (may be `[]` + `open_field` for free-text), optional `multi`/`recommended`/`section`.
 - **Routing to someone else:** when the doc is sent to another person, include `routing: { "from": "<sender>", "return_prompt": "…send back to <sender>." }` on the first component (the `return_prompt` must contain the literal `from` value) — and say it in the opening/closing prose too, which is what the reviewer actually sees. Self-answer → omit `routing`. If the conversation doesn't say which, ask once: "Are you answering these yourself, or sending them to someone else?"
 - **RTL:** auto-detected from content. Hebrew/Arabic input → Hebrew/Arabic chrome. Don't set a language field.
@@ -110,7 +119,7 @@ On the `route_document` path the platform validates the typed `blocks[]` for you
 **Output two things, in this exact order, nothing else:**
 1. **The whole woven Markdown document, inside ONE single outer code fence** — the copy-once/paste-once contract: one code block, one copy button, one paste into PassbackAI.
    - **Use a FOUR-backtick outer fence** (` ```` `) so it can contain the inner three-backtick component fences without the nesting breaking. No info-string on the outer fence. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
-   - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
+   - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
    - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string; smart quotes break `JSON.parse` and the block renders as raw code.
 2. A short closing message in the user's language (below), **outside** the outer fence.
 
@@ -120,7 +129,7 @@ No commentary, no category breakdown, no schema explanation.
 - Every inner fence body must `JSON.parse` cleanly — balanced brackets, no trailing commas, straight quotes.
 - Exact key names: `version` (`"1"`), `question` (**never `q`**), `options`, `items`, `questions` — per the primitive's shape.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi-choice`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- Stamp `"skill_version": "3.4"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.5"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 ### Closing message (paste path)
 
@@ -160,7 +169,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.4","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.5","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -195,6 +204,10 @@ That's the entire post-output text.
 Note the shape: **each point got the primitive its verb demands** — a pick-one (`single-choice`, with `recommended` and the *why* in its lead-in), a pick-many (`multi-choice`), a genuinely-open point (`open-question` — no invented filler options), and an ordering of 4 concrete peers (`prioritize`). No `questionnaire` appears because no 3+ questions formed one cluster. `routing` rides the FIRST component; the send-back instruction also lives in the opening and closing prose, which is what the reviewer actually sees. The settled prose invites annotation explicitly. *(The leading/trailing `` ```` `` is the real four-backtick outer fence — one code block, one copy button; the `>` marks are only this doc's way of showing the block.)*
 
 ## Changelog
+
+### v3.5 (2026-07-12)
+- **`allocate` (verb: split) joins the palette** — divide a fixed whole (budget / effort / headcount) across categories by weight. Discriminator: order is *which comes first* (`prioritize`); allocate is *how much each gets* (magnitudes summing to a whole) — percentages/dollars → allocate, 1st/2nd/3rd → prioritize.
+- **The law is stated two-sided — a floor as well as a ceiling.** Ceiling: a *settled* decision stays prose (don't componentize the decided — density is the form-y feel). Floor: an *open* decision always becomes a component, and when no sharp verb fits it the floor is `open-question`, never a demotion back to prose. The line is settled-vs-open, not fits-a-shape-vs-doesn't; restraint never means leaving the open unasked. This closes the under-use gap (a doc with real open points is never hollow) while keeping the over-use gap shut.
 
 ### v3.4 (2026-07-09)
 - **The epistemic formula — genius inside, simple outside.** Scan the DECISION SPACE, not the text: reconstruct the goal, enumerate what it requires deciding, diff against what the text settles — so silently-made and never-made decisions surface, not just "TBD" markers. Options must partition the plausible answers; every lead-in states the tradeoff and the falsifier behind `recommended`; components arrive in blocking order with the hinge decision named; settled prose is written as contestable claims. New pre-delivery check: read the doc as the reviewer, cold. On the MCP path, `route_document` now returns advisory `weave.hints` when the woven structure has lapses — fix, re-route, revoke the old id.
