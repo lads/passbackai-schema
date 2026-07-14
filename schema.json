@@ -10,7 +10,8 @@
     { "$ref": "#/$defs/open-question" },
     { "$ref": "#/$defs/prioritize" },
     { "$ref": "#/$defs/allocate" },
-    { "$ref": "#/$defs/questionnaire" }
+    { "$ref": "#/$defs/questionnaire" },
+    { "$ref": "#/$defs/youtube" }
   ],
   "$defs": {
     "routing": {
@@ -234,6 +235,22 @@
         "weight": { "type": "number", "minimum": 0, "description": "The category's share of `total`." },
         "context": { "type": "string" }
       }
+    },
+    "youtube": {
+      "type": "object",
+      "title": "YouTube video (verb: watch)",
+      "description": "Embed a YouTube video for the reviewer to watch. DISPLAY-ONLY — it collects no answer; the reviewer comments on it (and the surrounding prose) like any passage. Delivered via route_document to the routed reviewer surface, where it plays click-to-load (privacy-enhanced youtube-nocookie, no cookies until play); on a locally-pasted or `#s=` shared document it renders an inert preview and never contacts YouTube. Pass the 11-char video `id` ONLY — the site builds the embed URL; never pass a full URL or query string.",
+      "required": ["version", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{11}$", "description": "The 11-character YouTube video id (e.g. dQw4w9WgXcQ) — NOT a URL." },
+        "title": { "type": "string", "maxLength": 200, "description": "Optional caption shown under the video and used as the iframe title; the one anchorable line for comments." },
+        "thumbnail": { "type": "string", "description": "Optional preview image as a base64 data: URI (data:image/png|jpeg|webp;base64,…), downscaled (≈320×180) and under ~40 KB. An invalid or oversized value is dropped and a neutral facade shown." }
+      },
+      "examples": [
+        { "version": "1", "id": "dQw4w9WgXcQ", "title": "Onboarding walkthrough (v2)" }
+      ]
     }
   }
 }

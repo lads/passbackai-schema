@@ -31,6 +31,7 @@
 > | **Prioritize** | ` ```prioritize ` | **order** | ask the user to rank/reorder a short list by priority |
 > | **Allocate** | ` ```allocate ` | **split** | ask the user to split a fixed whole (a budget/effort/resource) across categories by weight |
 > | **Questionnaire** | ` ```questionnaire ` | **group** | present a batch of 3+ tightly-related questions as one unit |
+> | **YouTube** | ` ```youtube ` | **watch** | show a video (display-only, no answer; plays on the routed reviewer surface only) |
 >
 > More are planned (see [§7](#7-the-family-is-open--adding-a-component)). **Do not assume the family
 > is "a questionnaire"** — the questionnaire is the GROUP primitive, not the default vessel for every
@@ -76,7 +77,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `3.3` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r10` · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r11` · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -132,6 +133,7 @@ interactive component, passed as **typed JSON fields** (not a string you format)
 | **Questionnaire** | `{ "type": "questionnaire", "version": "1", "questions": [ … ] }` |
 | **Prioritize** | `{ "type": "prioritize", "version": "1", "items": [ … ] }` |
 | **Allocate** | `{ "type": "allocate", "version": "1", "items": [ { "id": …, "label": …, "weight": N }, … ] }` |
+| **YouTube** | `{ "type": "youtube", "version": "1", "id": "<11-char id>", "title": "…" }` |
 
 The component fields (`questions`, `items`, every option, `routing`, …) are **identical** to the fenced JSON
 specified in §3–§4 — the only difference is the wrapper carries a `type` and you pass it as an argument
@@ -281,6 +283,7 @@ server-side.)
 | [§4](#4-component-prioritize--order) | **Prioritize** | ` ```prioritize ` | **order** — rank / reorder a short list by priority |
 | [§4.5](#45-component-allocate--split) | **Allocate** | ` ```allocate ` | **split** — divide a fixed whole (budget / effort / resource) across categories by weight |
 | [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | **group** — a batch of 3+ tightly-related questions presented as one unit |
+| [§4.6](#46-component-youtube--watch) | **YouTube** | ` ```youtube ` | **watch** — show a video (display-only, no answer; routed reviewer surface only) |
 
 **Prose is itself a response channel.** Settled thinking stays prose — the reviewer annotates it directly.
 Weave the primitives INTO the prose, each one set up by the sentence before it; don't stack them into a form.
@@ -744,6 +747,57 @@ Plan against this split.
 > **For your parser:** the tag in the header tells you whether the user actively
 > changed your split or endorsed it; the bullet weights are always the resolved
 > split, and each `(was N{unit})` names the delta. Act on the resolved numbers.
+
+---
+
+## 4.6 COMPONENT: YouTube — *watch*
+
+The first **embed rich media** component (a growing family): a YouTube video the
+reviewer watches inside the document. Unlike every other component it is
+**display-only** — it collects **no answer**. The reviewer reacts to it the same
+way they react to prose: by commenting on the caption and the surrounding text.
+Use it to show, not ask — a walkthrough, a demo clip, a reference the decision
+depends on.
+
+**Delivery is routed-only.** A YouTube block plays **only on the routed reviewer
+surface** (a document delivered via `route_document`). On a locally-pasted or
+`#s=` shared document the block renders an **inert preview** and never contacts
+YouTube — the "your document never leaves your browser" promise stays literally
+true there. On the routed surface it is **click-to-load**: nothing reaches
+YouTube until the reviewer presses play, and playback uses the privacy-enhanced
+`youtube-nocookie` origin (no cookies until play).
+
+**Source of truth:** `isValidYouTube` / `parseYouTube` in `src/utils/youtube.js`;
+type `YouTube` in `src/domain.js`; render + runtime gate in
+`src/components/EmbeddedYouTube.jsx`.
+
+### 4.6.1 Schema
+
+| Key | Type | Required | Notes |
+|---|---|---|---|
+| `version` | string | **YES** | Must be the literal string `"1"`. |
+| `id` | string | **YES** | The **11-character** YouTube video id (e.g. `dQw4w9WgXcQ`) — matches `^[A-Za-z0-9_-]{11}$`. **Pass the id only, never a URL or query string** — the site builds the embed URL. |
+| `title` | string | no | Caption shown under the video and used as the iframe title. The **one anchorable line** for comments. Clamped to 200 chars. |
+| `thumbnail` | string | no | Optional preview image as a base64 `data:` image URI (`data:image/png|jpeg|webp;base64,…`), downscaled (~320×180) and under ~40 KB. An invalid or oversized value is **dropped** and a neutral facade shown. Never a live image URL — no network fetch. |
+
+### 4.6.2 Worked example
+
+````markdown
+```youtube
+{
+  "version": "1",
+  "id": "dQw4w9WgXcQ",
+  "title": "Onboarding walkthrough (v2) — the 90-second tour"
+}
+```
+````
+
+### 4.6.3 Answers output
+
+A YouTube block contributes **nothing** to the copy-out bundle — it has no
+answer. The reviewer's feedback on it arrives as **ordinary leaf-anchored
+comments** on its caption and the prose around it, in the normal annotations
+stream. There is no `# Answers:` entry for a `youtube` block.
 
 ---
 
