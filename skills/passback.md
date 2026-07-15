@@ -45,6 +45,7 @@ The live palette is whatever the `route_document` tool surface (or `get_componen
 | `prioritize` | **order** | rank ≥3 concrete, comparable, already-existing peers |
 | `allocate` | **split** | divide a fixed whole (budget / effort / headcount) across categories — the point is HOW MUCH, by weight |
 | `questionnaire` | **group** | work through 3+ TIGHTLY-related questions as one unit (one decision cluster) |
+| `mermaid` | **watch** | read a diagram the decision depends on — display-only, no answer (a `source`-only Mermaid block rendered client-side; the reviewer comments on it like prose) |
 
 The ladder, applied per point: *pick one of known options → `single-choice` · pick several → `multi-choice` · order a shortlist of ≥3 peers → `prioritize` · split a fixed whole by weight → `allocate` · genuinely open, nothing to enumerate → `open-question` · 3+ questions that truly form ONE decision cluster → `questionnaire` · thinking already settled → prose.* A two-way "ranking" is a `single-choice` (picking which goes first). **`allocate` vs `prioritize`:** order is *which comes first*; allocate is *how much each gets* (magnitudes summing to a whole). If the reviewer would answer in **percentages or dollars**, it's `allocate`; if in **1st/2nd/3rd**, it's `prioritize`. Don't manufacture filler options to force a choice where the point is open — that's an `open-question`. Don't split a real cluster (e.g. four fields of one config) into four lonely blocks — that's a `questionnaire`.
 

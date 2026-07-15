@@ -3,7 +3,7 @@
   "$id": "https://passbackai.com/schema.json",
   "title": "PassbackAI interactive components — an open palette, one primitive per unclear point",
   "description": "JSON Schema for the interactive components PassbackAI renders inside a pasted Markdown document. The palette is OPEN and growing; pick the primitive that fits each individual ambiguity: ```single-choice (choose one), ```multi-choice (choose many), ```open-question (write), ```prioritize (order), ```questionnaire (a GROUP of tightly-related questions presented as one unit). Prose is itself a response channel — the reviewer annotates it — so settled thinking stays prose. Each component is a bare JSON object inside its own fenced block; no other fence tag renders (```quiz, ```poll, ```multiple-choice are NOT block types — they show as plain code). A payload validates against exactly one component. Human spec: https://passbackai.com/ask ; raw Markdown: https://passbackai.com/ask.md — this file is kept in sync with them in the same commit.",
-  "$comment": "Spec revision r7 (2026-07-02). The fence contract: only the component tags named in oneOf render; everything else is a plain code block. This JSON Schema validates the JSON INSIDE a fence — it cannot enforce the fence tag itself, so the renderer contract is documented in /ask.md §2. Wire `version` is the string \"1\" for every component; `skill_version` is unrelated authoring-build metadata. Guards not expressible here, noted in `description` fields: (a) questionnaire question ids should be unique — duplicates collide answer state but are not rejected; (b) prioritize item ids MUST be unique — a duplicate rejects the block; (c) `recommended` and `routing.return_prompt` cross-field rules. Validate structure here, then consult /ask.md for the full guard list and the fence contract.",
+  "$comment": "Spec revision r8 (2026-07-15) — adds the display-only `mermaid` component (verb: watch; client-side rendered from `source`, no answer). The fence contract: only the component tags named in oneOf render; everything else is a plain code block. This JSON Schema validates the JSON INSIDE a fence — it cannot enforce the fence tag itself, so the renderer contract is documented in /ask.md §2. Wire `version` is the string \"1\" for every component; `skill_version` is unrelated authoring-build metadata. Guards not expressible here, noted in `description` fields: (a) questionnaire question ids should be unique — duplicates collide answer state but are not rejected; (b) prioritize item ids MUST be unique — a duplicate rejects the block; (c) `recommended` and `routing.return_prompt` cross-field rules. Validate structure here, then consult /ask.md for the full guard list and the fence contract.",
   "oneOf": [
     { "$ref": "#/$defs/single-choice" },
     { "$ref": "#/$defs/multi-choice" },
@@ -11,7 +11,8 @@
     { "$ref": "#/$defs/prioritize" },
     { "$ref": "#/$defs/allocate" },
     { "$ref": "#/$defs/questionnaire" },
-    { "$ref": "#/$defs/youtube" }
+    { "$ref": "#/$defs/youtube" },
+    { "$ref": "#/$defs/mermaid" }
   ],
   "$defs": {
     "routing": {
@@ -250,6 +251,21 @@
       },
       "examples": [
         { "version": "1", "id": "dQw4w9WgXcQ", "title": "Onboarding walkthrough (v2)" }
+      ]
+    },
+    "mermaid": {
+      "type": "object",
+      "title": "Mermaid diagram (verb: watch)",
+      "description": "Embed a Mermaid diagram (flowchart, sequence, ER, gantt, …) for the reviewer to read. DISPLAY-ONLY — it collects no answer; the reviewer comments on it (and the surrounding prose) like any passage. The diagram is drawn CLIENT-SIDE from `source` on every surface (local paste, `#s=` share, and routed alike) — there is no server-rendered image. Pass the Mermaid `source` text ONLY; the site renders and sanitizes it.",
+      "required": ["version", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "source": { "type": "string", "minLength": 1, "maxLength": 8000, "description": "The Mermaid diagram source text (e.g. \"graph TD; A-->B;\"). Non-empty and under ~8 KB; a longer source is rejected and the fence renders as plain code." },
+        "title": { "type": "string", "maxLength": 200, "description": "Optional caption shown under the diagram; the one anchorable line for comments." }
+      },
+      "examples": [
+        { "version": "1", "source": "graph TD; A[Paste] --> B[Review] --> C[Copy back];", "title": "The review loop" }
       ]
     }
   }

@@ -32,6 +32,7 @@
 > | **Allocate** | ` ```allocate ` | **split** | ask the user to split a fixed whole (a budget/effort/resource) across categories by weight |
 > | **Questionnaire** | ` ```questionnaire ` | **group** | present a batch of 3+ tightly-related questions as one unit |
 > | **YouTube** | ` ```youtube ` | **watch** | show a video (display-only, no answer; plays on the routed reviewer surface only) |
+> | **Mermaid** | ` ```mermaid ` | **watch** | show a diagram (display-only, no answer; rendered client-side on every surface) |
 >
 > More are planned (see [§7](#7-the-family-is-open--adding-a-component)). **Do not assume the family
 > is "a questionnaire"** — the questionnaire is the GROUP primitive, not the default vessel for every
@@ -77,7 +78,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `3.3` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r11` · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r12` · 2026-07-15 · **Mermaid** ([§4.7](#47-component-mermaid--watch)): a ` ```mermaid ` **embed rich media** component — verb **watch** — a display-only diagram (flowchart/sequence/ER/…). DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and rendered **client-side on every surface** (paste, `#s=`, routed alike) from a `source`-only payload — the diagram is drawn by an on-demand, off-budget renderer under the unchanged strict CSP, and the produced SVG is sanitized before display. Additive; nothing existing changed. r11 · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -134,6 +135,7 @@ interactive component, passed as **typed JSON fields** (not a string you format)
 | **Prioritize** | `{ "type": "prioritize", "version": "1", "items": [ … ] }` |
 | **Allocate** | `{ "type": "allocate", "version": "1", "items": [ { "id": …, "label": …, "weight": N }, … ] }` |
 | **YouTube** | `{ "type": "youtube", "version": "1", "id": "<11-char id>", "title": "…" }` |
+| **Mermaid** | `{ "type": "mermaid", "version": "1", "source": "graph TD; A-->B;", "title": "…" }` |
 
 The component fields (`questions`, `items`, every option, `routing`, …) are **identical** to the fenced JSON
 specified in §3–§4 — the only difference is the wrapper carries a `type` and you pass it as an argument
@@ -284,6 +286,7 @@ server-side.)
 | [§4.5](#45-component-allocate--split) | **Allocate** | ` ```allocate ` | **split** — divide a fixed whole (budget / effort / resource) across categories by weight |
 | [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | **group** — a batch of 3+ tightly-related questions presented as one unit |
 | [§4.6](#46-component-youtube--watch) | **YouTube** | ` ```youtube ` | **watch** — show a video (display-only, no answer; routed reviewer surface only) |
+| [§4.7](#47-component-mermaid--watch) | **Mermaid** | ` ```mermaid ` | **watch** — show a diagram (display-only, no answer; rendered client-side on every surface) |
 
 **Prose is itself a response channel.** Settled thinking stays prose — the reviewer annotates it directly.
 Weave the primitives INTO the prose, each one set up by the sentence before it; don't stack them into a form.
@@ -804,6 +807,59 @@ A YouTube block contributes **nothing** to the copy-out bundle — it has no
 answer. The reviewer's feedback on it arrives as **ordinary leaf-anchored
 comments** on its caption and the prose around it, in the normal annotations
 stream. There is no `# Answers:` entry for a `youtube` block.
+
+---
+
+## 4.7 COMPONENT: Mermaid — *watch*
+
+An **embed rich media** component (the same family as YouTube): a **Mermaid
+diagram** the reviewer reads inside the document — a flowchart, sequence diagram,
+ER diagram, gantt, and the rest of the Mermaid grammar. Like YouTube it is
+**display-only** — it collects **no answer**. The reviewer reacts to it the same
+way they react to prose: by commenting on the caption and the surrounding text.
+Use it to show a shape the decision depends on — an architecture, a flow, a
+state machine — not to ask.
+
+**Delivery is source-only, rendered on every surface.** The payload carries the
+Mermaid **`source` text only** — there is no server-rendered image and no
+inert/rendered distinction. Every surface (local paste, `#s=` share, routed
+`/r/<id>`) **lazy-loads the renderer and draws the diagram client-side** from
+`source`. The heavy renderer is fetched **on demand** (only when a document
+contains a diagram) as a same-origin script — the strict CSP is unchanged.
+Rendering is **fail-closed**: an invalid source degrades to the raw source in a
+code block, and the produced SVG is **sanitized** (no scripts, no event
+handlers, no external references) before it is shown.
+
+**Source of truth:** `isValidMermaid` / `parseMermaid` in `src/utils/mermaid.js`;
+type `Mermaid` in `src/domain.js`; render in `src/components/EmbeddedMermaid.jsx`
+(the off-budget renderer is `src/mermaid-entry.js` → `/js/mermaid.js`).
+
+### 4.7.1 Schema
+
+| Key | Type | Required | Notes |
+|---|---|---|---|
+| `version` | string | **YES** | Must be the literal string `"1"`. |
+| `source` | string | **YES** | The Mermaid diagram **source text** (e.g. `graph TD; A-->B;`). Non-empty and under ~8 KB; a longer source is rejected and the fence renders as plain code. |
+| `title` | string | no | Caption shown under the diagram. The **one anchorable line** for comments. Clamped to 200 chars. |
+
+### 4.7.2 Worked example
+
+````markdown
+```mermaid
+{
+  "version": "1",
+  "source": "graph TD; A[Paste] --> B[Review] --> C[Copy back];",
+  "title": "The review loop"
+}
+```
+````
+
+### 4.7.3 Answers output
+
+A Mermaid block contributes **nothing** to the copy-out bundle — it has no
+answer. The reviewer's feedback on it arrives as **ordinary leaf-anchored
+comments** on its caption and the prose around it, in the normal annotations
+stream. There is no `# Answers:` entry for a `mermaid` block.
 
 ---
 
