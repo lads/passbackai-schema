@@ -316,6 +316,12 @@ else.** The renderer knows only the tags in the index above.
   is ` ```open-question `, **never demoted back to prose**. A document with real open points is never
   component-less; one that settles everything weaves none. Restraint means not componentizing the
   *settled* — it never means leaving the *open* unasked.
+- **DISPLAY vs RESPONSE — the decision-point law is for RESPONSE components.** The verbs above
+  (choose / order / split / write / group) map an *open decision* to a widget. A **display**
+  component — today ` ```youtube ` (**watch**) — carries no decision: reach for it whenever the
+  document *references* that media, decision or not. Embed a video with the ` ```youtube ` block;
+  **never** hand-write a Markdown image-link or an `img.youtube.com` URL for a video — the thumbnail
+  host is CSP-blocked (broken image) and a linked image is a click-out, not a player.
 - **One info-string, lowercase, nothing after it** — the opening fence is exactly the component tag
   (e.g. ` ```single-choice `) on its own line.
 
