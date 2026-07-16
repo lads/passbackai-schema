@@ -45,7 +45,7 @@ The live palette is whatever the `route_document` tool surface (or `get_componen
 | `prioritize` | **order** | rank ≥3 concrete, comparable, already-existing peers |
 | `allocate` | **split** | divide a fixed whole (budget / effort / headcount) across categories — the point is HOW MUCH, by weight |
 | `questionnaire` | **group** | work through 3+ TIGHTLY-related questions as one unit (one decision cluster) |
-| `mermaid` | **watch** | read a diagram the decision depends on — display-only, no answer (a `source`-only Mermaid block rendered client-side; the reviewer comments on it like prose) |
+| `mermaid` | **watch** | see a STRUCTURE at a glance — a diagram the decision depends on (`source`-only, rendered client-side). A **comprehension** aid, not a decision: display-only, no answer; the reviewer comments per node / edge / whole diagram. See "Diagrams" below for when to reach for one. |
 
 The ladder, applied per point: *pick one of known options → `single-choice` · pick several → `multi-choice` · order a shortlist of ≥3 peers → `prioritize` · split a fixed whole by weight → `allocate` · genuinely open, nothing to enumerate → `open-question` · 3+ questions that truly form ONE decision cluster → `questionnaire` · thinking already settled → prose.* A two-way "ranking" is a `single-choice` (picking which goes first). **`allocate` vs `prioritize`:** order is *which comes first*; allocate is *how much each gets* (magnitudes summing to a whole). If the reviewer would answer in **percentages or dollars**, it's `allocate`; if in **1st/2nd/3rd**, it's `prioritize`. Don't manufacture filler options to force a choice where the point is open — that's an `open-question`. Don't split a real cluster (e.g. four fields of one config) into four lonely blocks — that's a `questionnaire`.
 
@@ -57,6 +57,40 @@ The ladder, applied per point: *pick one of known options → `single-choice` ·
 - **Floor (against a hollow doc):** a decision the text leaves *open* always becomes a component — and when no sharp verb fits it, the floor is `open-question`, **never a demotion back to prose**. An open point dropped to prose is a missed question, not restraint. So a doc with real open points is *never* component-less; only a doc that genuinely settles everything weaves none.
 
 The line is **settled vs open**, not "fits a shape vs doesn't." Restraint means not componentizing the *settled* — it never means leaving the *open* unasked.
+
+## Diagrams — reach for `mermaid` when structure gets dense
+
+A `mermaid` diagram is a **comprehension** aid, a *different axis* from the weave law above. The verbs there map one OPEN decision to one widget; a diagram maps a **STRUCTURE the reader must hold in their head** to a picture. It asks nothing — it makes the shape graspable so the reviewer reacts to the *right* thing. Reach for one and it lands as "genius, now it's clear."
+
+- **The reach trigger.** Emit a ` ```mermaid ` block whenever you're describing a **process, flow, mechanism, sequence, state machine, decision tree, architecture, dependency order, or timeline** — anything the reader would otherwise have to reassemble from prose one clause at a time. Place it **at the moment the prose turns structurally dense**, right after the sentence it clarifies — never in an appendix.
+- **The power of TWO — compare with a PAIR.** When the doc weighs a change or options, **two diagrams side by side** (`before → after`, `current vs proposed`, `A vs B`) is often the highest-value move — the reader sees exactly what moves. **Earn it, though: each side must be structurally non-trivial** (a real flow / architecture / state machine per side). A plain two-option choice ("lead with A or B", "publish Tue/Thu vs Mon/Wed") stays a `single-choice` + a sentence, **not** two boxes-and-arrows; diagram the comparison only when the *shapes* differ in a way prose can't hold, like current-vs-proposed architecture. The *decision* still rides a component (a `single-choice` after the pair); the diagrams only make the choice legible.
+- **Restraint — don't diagram the trivial.** A diagram earns its place only when the structure is genuinely hard to hold in prose. Three linear steps ("paste → review → copy back") stay prose; a fan-out, a branch, a cycle, or a multi-actor sequence is what it's *for*. Diagrams sprinkled on obvious things read as noise, the same way stacked widgets read as a form.
+- **The payoff.** A rendered flowchart is commentable **per node, per edge, and as a whole**, so a diagram turns a vague "this mechanism is unclear" into a comment pinned to the one box or arrow that's wrong. That's the moment: *"genius — and now I can point at the unclear part."*
+- **Authoring is `source`-only** — `{ "version": "1", "source": "graph TD; A-->B;", "title": "…" }`. You never name or mark nodes for commenting; the app derives node/edge ids from your `source`.
+
+**Worked example — a mechanism that clicks.** Dense prose like *"on a read we check the edge cache; on a miss we hit origin, but if origin is slow we serve the last good copy and refresh in the background, and only with no cached copy at all do we block on origin"* forces the reader to simulate the branching. Drop the diagram in right after it:
+
+```mermaid
+{ "version": "1", "source": "graph TD; R[Read request] --> C{In edge cache?}; C -->|hit| S[Serve cached]; C -->|miss| O{Origin healthy?}; O -->|healthy| F[Fetch, cache, serve]; O -->|slow| B[Serve stale + refresh in background]; O -->|no cached copy| W[Block on origin];", "title": "Read path — cache, origin, and the stale fallback" }
+```
+
+The reviewer comes back with a comment on **node `B`**: *"the 'slow' branch should also cover a 5xx from origin, not just latency"* — pinned to the exact box, not a vague note.
+
+**Worked example — the comparison PAIR.** The change is "move JWT validation from every service to the gateway." One diagram of *today*, one of *proposed*, side by side — then a `single-choice` for the actual call:
+
+```mermaid
+{ "version": "1", "source": "graph LR; U[User] --> G[Gateway]; G --> S1[Service A]; G --> S2[Service B]; S1 --> A[Auth service]; S2 --> A;", "title": "Current — every service re-validates" }
+```
+
+```mermaid
+{ "version": "1", "source": "graph LR; U[User] --> G[Gateway]; G -->|signed header| S1[Service A]; G -->|signed header| S2[Service B]; G --> A[Auth service];", "title": "Proposed — the gateway validates once" }
+```
+
+```single-choice
+{ "version": "1", "question": "Move JWT validation to the gateway in v1?", "options": ["Yes — gateway validates, services trust the signed header", "No — keep per-service validation for now"], "recommended": "Yes — gateway validates, services trust the signed header" }
+```
+
+The reviewer sees exactly what moves and can comment on the **`signed header` edge** in the *Proposed* diagram (*"what signs it — short-lived key? rotation?"*), then expresses the decision in the choice below the pair.
 
 ## JOB: ROUTE — scan, shape, weave, check, deliver
 

@@ -78,7 +78,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `3.3` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r14` · 2026-07-16 · **Mermaid edge + whole-diagram comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now also anchor a comment to a specific **flowchart EDGE (line + its label)** and to the **WHOLE diagram**, in addition to a node. Still **AUTHORING-UNCHANGED** — `source`-only ({version, source, title}); edge/whole-diagram commenting is a review-side answer (edges keyed by the edge's source-derived endpoints, whole-diagram keyed to nothing; LEAF-FREE, so leaf numbering is untouched). Additive; nothing you author changes. r13 · 2026-07-15 · **Mermaid node comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now anchor a comment to a specific **flowchart NODE (box)** of a rendered ` ```mermaid ` diagram, not only the caption. The **AUTHORING payload is UNCHANGED** — still `source`-only ({version, source, title}); node commenting is a review-side answer keyed by the node id already in your `source` (LEAF-FREE, so leaf numbering is untouched). Only flowchart/graph diagrams expose per-node commenting; other types are commented on like prose. Additive; nothing you author changes. r12 · 2026-07-15 · **Mermaid** ([§4.7](#47-component-mermaid--watch)): a ` ```mermaid ` **embed rich media** component — verb **watch** — a diagram (flowchart/sequence/ER/…) rendered **client-side on every surface** (paste, `#s=`, routed alike) from a `source`-only payload — the diagram is drawn by an on-demand, off-budget renderer under the unchanged strict CSP, and the produced SVG is sanitized before display. Additive; nothing existing changed. r11 · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r15` · 2026-07-16 · **Diagram authoring guidance** ([§2.2](#22-common-mistakes), [§4.7](#47-component-mermaid--watch)): teaches WHEN/HOW an authoring model should reach for a ` ```mermaid ` diagram — the **reach trigger** (you're describing a STRUCTURE the reader must hold in their head: a process / flow / mechanism / sequence / state machine / decision tree / architecture / dependency order / timeline), the **comparison PAIR** (two diagrams side by side — before→after, A vs B — the highest-value move when a doc weighs a change), **restraint** (a diagram earns its place only when the structure is genuinely hard to hold in prose; three linear steps stay prose), and the **payoff** (the reviewer comments on the exact node/edge, per [§4.7.3](#473-answers-output)). A diagram is a **comprehension** aid, a different axis from the one-primitive-per-open-decision weave law. **GUIDANCE-ONLY** — the authoring payload is UNCHANGED (still `source`-only, {version, source, title}); nothing you author changes. r14 · 2026-07-16 · **Mermaid edge + whole-diagram comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now also anchor a comment to a specific **flowchart EDGE (line + its label)** and to the **WHOLE diagram**, in addition to a node. Still **AUTHORING-UNCHANGED** — `source`-only ({version, source, title}); edge/whole-diagram commenting is a review-side answer (edges keyed by the edge's source-derived endpoints, whole-diagram keyed to nothing; LEAF-FREE, so leaf numbering is untouched). Additive; nothing you author changes. r13 · 2026-07-15 · **Mermaid node comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now anchor a comment to a specific **flowchart NODE (box)** of a rendered ` ```mermaid ` diagram, not only the caption. The **AUTHORING payload is UNCHANGED** — still `source`-only ({version, source, title}); node commenting is a review-side answer keyed by the node id already in your `source` (LEAF-FREE, so leaf numbering is untouched). Only flowchart/graph diagrams expose per-node commenting; other types are commented on like prose. Additive; nothing you author changes. r12 · 2026-07-15 · **Mermaid** ([§4.7](#47-component-mermaid--watch)): a ` ```mermaid ` **embed rich media** component — verb **watch** — a diagram (flowchart/sequence/ER/…) rendered **client-side on every surface** (paste, `#s=`, routed alike) from a `source`-only payload — the diagram is drawn by an on-demand, off-budget renderer under the unchanged strict CSP, and the produced SVG is sanitized before display. Additive; nothing existing changed. r11 · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -325,6 +325,18 @@ else.** The renderer knows only the tags in the index above.
   document *references* that media, decision or not. Embed a video with the ` ```youtube ` block;
   **never** hand-write a Markdown image-link or an `img.youtube.com` URL for a video — the thumbnail
   host is CSP-blocked (broken image) and a linked image is a click-out, not a player.
+- **A DIAGRAM is COMPREHENSION, a different axis from the weave law.** The response verbs above map
+  one OPEN decision to one widget; a ` ```mermaid ` diagram maps a **STRUCTURE the reader must hold in
+  their head** — a process / flow / mechanism / sequence / state machine / decision tree / architecture
+  / dependency order / timeline — to a picture, so they grasp it at a glance. Reach for one **at the
+  moment the prose turns structurally dense**, bound to the sentence it clarifies; reach for **TWO side
+  by side** to compare (before → after, option A vs B) **only when each side is itself a real structure**
+  — a plain two-option pick ("lead with A or B", "Tue/Thu vs Mon/Wed") is a ` ```single-choice ` and a
+  sentence, not two boxes-and-arrows; diagram the comparison only when the *shapes* differ in a way prose
+  can't hold (current-vs-proposed architecture). A diagram never counts against the
+  one-primitive-per-point rule and never replaces a component (the decision still rides its widget). The
+  same restraint still applies — three linear steps stay prose; diagram only what is genuinely hard to
+  hold. Full guidance + two worked examples: [§4.7](#47-component-mermaid--watch).
 - **One info-string, lowercase, nothing after it** — the opening fence is exactly the component tag
   (e.g. ` ```single-choice `) on its own line.
 
@@ -842,6 +854,37 @@ handlers, no external references) before it is shown.
 type `Mermaid` in `src/domain.js`; render in `src/components/EmbeddedMermaid.jsx`
 (the off-budget renderer is `src/mermaid-entry.js` → `/js/mermaid.js`).
 
+### 4.7.0 When to reach for a diagram — the authoring guidance
+
+**The reach trigger.** Emit a ` ```mermaid ` block whenever you are describing something the reader must
+hold in their head as a **STRUCTURE** — a process, a flow, a mechanism, a sequence, a state machine, a
+decision tree, an architecture, a dependency order, a timeline. Prose walks such a shape one clause at a
+time and forces the reader to reassemble it; a diagram shows it at once. Place it **at the moment the
+prose turns structurally dense**, immediately after the sentence it clarifies — never in an appendix at
+the end. This is a **comprehension** aid, a different axis from the decision-components' one-primitive-
+per-open-point weave law ([§2.2](#22-common-mistakes)): a diagram asks nothing; it makes the shape
+graspable so the reviewer can react to the *right* thing.
+
+**The power of TWO — compare with a PAIR.** When the document weighs options or a change, **two diagrams
+side by side** is often the single highest-value move: `before → after`, `current vs proposed`,
+`option A vs option B`. The reader sees exactly what moves. **Earn the pair, though: each side must be
+itself structurally non-trivial** — a real flow / architecture / state machine per side. A plain
+two-option choice ("lead with A or B", "publish Tue/Thu vs Mon/Wed") stays a ` ```single-choice ` plus a
+sentence, **not** two boxes-and-arrows; reach for the pair only when the *shapes* differ in a way prose
+can't hold (current-vs-proposed architecture). The *decision itself* still rides a component
+(a ` ```single-choice ` after the pair); the diagrams only make the choice legible.
+
+**Restraint — don't diagram the trivial.** A diagram earns its place only when the structure is
+genuinely hard to hold in prose. Three linear steps ("paste → review → copy back") stay prose; a
+fan-out, a branch, a cycle, or a multi-actor sequence is what a diagram is *for*. A document peppered
+with diagrams of obvious things reads as noise — the same failure as a document peppered with widgets
+reading as a form.
+
+**The payoff — the reviewer points at the exact box.** Because a rendered flowchart is commentable **per
+node, per edge, and as a whole** ([§4.7.3](#473-answers-output)), a diagram turns a vague "this
+mechanism is unclear" into a comment pinned to the one box or arrow that is wrong. That is the "genius —
+and now I can point at the unclear part" moment the diagram exists to create.
+
 ### 4.7.1 Schema
 
 | Key | Type | Required | Notes |
@@ -884,6 +927,68 @@ diagram the reviewer left untouched contributes **nothing** — there is no
 `# Answers:` entry for it. All of these are LEAF-FREE (keyed by the node/edge id
 derived from your `source`, or by nothing for a whole-diagram note), so they never
 affect leaf numbering.
+
+### 4.7.4 Worked examples — a mechanism, and a comparison pair
+
+**Example A — a mechanism that clicks.** The prose below is correct but dense: the reader has to
+simulate the branching in their head. Dropping the diagram in right after it makes the read-path
+graspable at a glance — and the reviewer pins their concern to the exact node.
+
+The dense prose it clarifies:
+
+> On every read we check the edge cache first. On a hit we serve it. On a miss we go to origin — but if
+> origin is slow we serve the last good copy and refresh in the background, and only when there is no
+> cached copy at all do we block the reader on origin.
+
+````markdown
+```mermaid
+{
+  "version": "1",
+  "source": "graph TD; R[Read request] --> C{In edge cache?}; C -->|hit| S[Serve cached]; C -->|miss| O{Origin healthy?}; O -->|healthy| F[Fetch, cache, serve]; O -->|slow| B[Serve stale + refresh in background]; O -->|no cached copy| W[Block on origin];",
+  "title": "Read path — cache, origin, and the stale fallback"
+}
+```
+````
+
+What comes back when the reviewer commented on one **node**:
+
+```markdown
+## Read path — cache, origin, and the stale fallback (diagram)
+
+- Node `B` — the "slow" branch should also cover a 5xx from origin, not just latency
+```
+
+That is the payoff: "this mechanism is unclear" became a comment pinned to the exact box.
+
+**Example B — the comparison PAIR.** The change is "move JWT validation from every service to the
+gateway." One diagram of *today* and one of *proposed*, side by side, shows exactly what moves — then a
+single choice captures the actual decision (the diagrams clarify; the widget decides).
+
+The prose it clarifies:
+
+> Today every service validates the JWT itself, so each one carries the auth client and re-checks with
+> the auth service. The proposal: the gateway validates once and passes a signed header the services
+> trust.
+
+````markdown
+```mermaid
+{ "version": "1", "source": "graph LR; U[User] --> G[Gateway]; G --> S1[Service A]; G --> S2[Service B]; S1 --> A[Auth service]; S2 --> A;", "title": "Current — every service re-validates" }
+```
+
+```mermaid
+{ "version": "1", "source": "graph LR; U[User] --> G[Gateway]; G -->|signed header| S1[Service A]; G -->|signed header| S2[Service B]; G --> A[Auth service];", "title": "Proposed — the gateway validates once" }
+```
+
+The proposed shape is simpler but makes the gateway a single point of trust. Ship it in v1?
+
+```single-choice
+{ "version": "1", "question": "Move JWT validation to the gateway in v1?", "options": ["Yes — gateway validates, services trust the signed header", "No — keep per-service validation for now"], "recommended": "Yes — gateway validates, services trust the signed header" }
+```
+````
+
+The reviewer can now comment on the **`signed header` edge** in the *Proposed* diagram ("what signs it —
+short-lived key? rotation?") — a question that was invisible in the prose, and a decision they express
+in the single choice below the pair.
 
 ---
 
