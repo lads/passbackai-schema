@@ -131,7 +131,13 @@ Skip: style preferences with no consequence, questions answered later in the sam
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
 - **`allocate`:** `items` (unique `id` + `label` + a numeric `weight` each — your proposed split); optional `total` (default 100), `unit` (`"%"` default, `"$"`, `"pts"`), `title`/`instruction`. The reviewer drags weighted bars that always sum to `total`.
 - **`questionnaire`:** the group envelope — `questions[]` where each question carries `id`, `question`, `options` (may be `[]` + `open_field` for free-text), optional `multi`/`recommended`/`section`.
-- **`youtube` (display — no answer):** `id` is the **11-char video id ONLY** — never a full URL or query string; pass the bare id even for a Shorts or `youtu.be` link (the site builds the privacy-enhanced embed). Optional `title`. It renders a click-to-load player; the reviewer comments on it — and the prose around it — like any passage. No `routing`/answer fields.
+- **`youtube` (display — no answer):** `id` is the **11-char video id ONLY** — never a full URL or query string; pass the bare id even for a Shorts or `youtu.be` link (the site builds the privacy-enhanced embed). Optional `title`. It renders a click-to-load player; the reviewer comments on it — and the prose around it — like any passage. No `routing`/answer fields. The whole block:
+
+  ````markdown
+  ```youtube
+  { "version": "1", "id": "dQw4w9WgXcQ", "title": "Onboarding walkthrough — the 90-second tour" }
+  ```
+  ````
 - **Routing to someone else:** when the doc is sent to another person, include `routing: { "from": "<sender>", "return_prompt": "…send back to <sender>." }` on the first component (the `return_prompt` must contain the literal `from` value) — and say it in the opening/closing prose too, which is what the reviewer actually sees. Self-answer → omit `routing`. If the conversation doesn't say which, ask once: "Are you answering these yourself, or sending them to someone else?"
 - **RTL:** auto-detected from content. Hebrew/Arabic input → Hebrew/Arabic chrome. Don't set a language field.
 
