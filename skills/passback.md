@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.6"
+  version: "3.7"
   created: "05-05-2026"
-  updated: "2026-07-15"
+  updated: "2026-07-17"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -116,8 +116,13 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 **4. Deliver** — by whether you are connected to PassbackAI over MCP:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.6"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
+- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.7"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
 - **NOT connected, or a route fails:** fall back to **paste** — emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser.
+
+**Long documents — communicate, don't shrink.** Routing re-generates the whole document as the tool call's arguments, so a long document means a long visible wait *before* the link appears. Never trim capability or drop open points to dodge that wait. Do two things instead:
+
+- **Say so, up front.** When the woven document will be long (roughly 8+ components, or several screens of prose), tell the user in one line *before* calling `route_document` — e.g. *"This one is long — routing will take a minute or two."* An expected wait is patience; an unexplained one is a bug report.
+- **Offer a staged split ONLY when it adds value.** The one split worth offering is a *dependency* split: when answers to the hinge decisions would genuinely sharpen the later prose and questions, offer routing round 1 (the hinges) now, then weaving round 2 from their answers (pulled via `list_responses`). Name the value when you offer — *"your round-1 answers will sharpen round 2"* — and skip the offer entirely when the rounds would be independent: a split with no dependency is just two links and twice the friction.
 
 > **The component fields are identical on both paths** — only delivery differs. The **full, code-verified component schema (every field, all primitives) lives at <https://passbackai.com/ask>** (raw: `/ask.md`, JSON Schema: `/schema.json`). Read it there rather than expecting this file to restate it.
 
@@ -125,7 +130,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.6"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.7"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label for single, an ARRAY of labels for multi — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -173,7 +178,7 @@ No commentary, no category breakdown, no schema explanation.
 - Every inner fence body must `JSON.parse` cleanly — balanced brackets, no trailing commas, straight quotes.
 - Exact key names: `version` (`"1"`), `question` (**never `q`**), `options`, `items`, `questions` — per the primitive's shape.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi-choice`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- Stamp `"skill_version": "3.6"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.7"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 ### Closing message (paste path)
 
@@ -213,7 +218,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.6","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.7","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -248,6 +253,9 @@ That's the entire post-output text.
 Note the shape: **each point got the primitive its verb demands** — a pick-one (`single-choice`, with `recommended` and the *why* in its lead-in), a pick-many (`multi-choice`), a genuinely-open point (`open-question` — no invented filler options), and an ordering of 4 concrete peers (`prioritize`). No `questionnaire` appears because no 3+ questions formed one cluster. `routing` rides the FIRST component; the send-back instruction also lives in the opening and closing prose, which is what the reviewer actually sees. The settled prose invites annotation explicitly. *(The leading/trailing `` ```` `` is the real four-backtick outer fence — one code block, one copy button; the `>` marks are only this doc's way of showing the block.)*
 
 ## Changelog
+
+### v3.7 (2026-07-17)
+- **Long documents: communicate, don't shrink.** Routing re-generates the document inside the tool call, so a long doc = a long wait before the link. The skill now says so up front in one line, and offers a staged split ONLY when it adds value — a dependency split where round-1 (hinge) answers sharpen the round-2 weave, pulled back via `list_responses`. Capability is never trimmed to shorten the wait, and independent rounds are never split.
 
 ### v3.6 (2026-07-15)
 - **`youtube` (verb: watch) — a DISPLAY block.** Embed a video the reviewer watches and reacts to; it collects no answer and sits outside the settled-vs-open law. Reach for it whenever the doc references a video — pass the 11-char video id only, **never** a hand-written Markdown image link or an `img.youtube.com` URL.
