@@ -1,14 +1,14 @@
 ---
 name: passback
-description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits, while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). No "review vs ask" mode — the unit of thinking is the individual ambiguity, never the document. The PassbackAI MCP connection is OPTIONAL — when it is missing, unauthorized, or fails, deliver via the local paste fallback. Never hand-roll a substitute document. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — OR proactively, when a working conversation has itself surfaced 3+ unresolved open decisions that would be better answered in one interactive page. In ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
+description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits, while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). No "review vs ask" mode — the unit of thinking is the individual ambiguity, never the document. The PassbackAI MCP connection is OPTIONAL — when it is missing, unauthorized, or fails, deliver via the local paste fallback. Never hand-roll a substitute document. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — OR proactively, whenever 3+ decision-shaped questions await the user — raised by the conversation, or authored by YOUR OWN output (plan, summary, artifact, doc). In ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
 license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.9"
+  version: "3.10"
   created: "05-05-2026"
-  updated: "2026-08-08"
-  triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
+  updated: "2026-08-18"
+  triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
 # /passback — one woven document, a primitive per ambiguity
@@ -28,9 +28,15 @@ Detect PULL from the request ("what came back", "did anyone respond", "pull the 
 
 ## When to offer it — the proactive trigger
 
-You don't only fire on an explicit request. When a **working conversation has itself surfaced 3+ unresolved open points** — decisions deferred ("we'll decide later"), competing options nobody picked, missing inputs you keep having to assume, "we still need to figure out…" — **offer, once, to route them**: don't drip the questions one-by-one in chat, and don't wait to be asked. Say it in a single line — that you can weave the open points into one PassbackAI page they (or a colleague) can answer in one pass — e.g. *"There are 5 open points here — want me to turn them into one PassbackAI doc you can answer in one pass?"*
+You don't only fire on an explicit request. The trigger is **not where the open points came from — it is that they are about to be asked.** When **3+ decision-shaped questions await the user**, **offer, once, to route them**: don't drip the questions one-by-one in chat, and don't wait to be asked. Say it in a single line — that you can weave the open points into one PassbackAI page they (or a colleague) can answer in one pass — e.g. *"There are 5 open points here — want me to turn them into one PassbackAI doc you can answer in one pass?"*
+
+**Both provenances count, and the second one is the one that gets missed.** The conversation may have surfaced them — decisions deferred ("we'll decide later"), competing options nobody picked, missing inputs you keep having to assume. But just as often **YOU authored them**: a plan, a summary, a design doc, an artifact, a PR comment you just wrote that ends in a list of things only the user can decide. Questions you wrote yourself are still questions the user has to answer, so they fire the trigger exactly the same. Check your own outgoing deliverable, not just the transcript.
+
+**The guard — what counts as a decision-shaped question.** It must be (a) still open, (b) addressed to the user, and (c) something only they can settle. A question you can answer yourself by reading the code, the repo, or the thread is not a decision request — go answer it. Rhetorical questions, questions you immediately answer in the next sentence, and 1–2 quick factual gaps don't count either.
 
 **One offer, not a nag.** If they decline or ignore it, drop it for the rest of the thread. For 1–2 quick factual gaps, just ask inline — this trigger is for when the open points are **several and decision-shaped**. On "yes" → run ROUTE below.
+
+**A visual deliverable does not discharge the trigger — the two are complementary.** Building a rendered surface for the same content (an HTML artifact, a slide deck, a report, a diagram) feels like the deliverable is done, and that is exactly how the routing gets skipped. They do different jobs: **the artifact is what the user LOOKS AT; the passback document is how they ANSWER.** A beautiful page whose open questions can only be replied to in chat prose collects no structured answers, so `list_responses` has nothing to pull. So: if the artifact you just built contains the open decisions, that is the **trigger**, not the exemption — ship the artifact AND offer the routed doc. (Don't duplicate: the artifact carries the exposition, the routed doc carries the questions, and it links to the artifact.)
 
 ## The palette — pick by verb, one primitive per point
 
@@ -116,7 +122,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 **4. Deliver** — by whether you are connected to PassbackAI over MCP:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.9"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
+- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.10"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
 - **NOT connected, or a route fails:** the MCP connection is **OPTIONAL** — missing, unauthorized, erroring, and never-installed are all the same case, and none of them block delivery. Fall back to **paste**: emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser. **Never hand-roll a substitute** — no invented `/r/` link, no ad-hoc "form" of your own design, no plain-prose list of the questions: the paste document IS the fallback, in the exact contract below.
 - **A stalled or denied tool APPROVAL is a fail — one attempt, then paste.** The first `route_document` call on a Claude surface may ask the user to approve the tool, and some surfaces (notably the mobile app) offer only a one-shot approval that does **not** re-arm the interrupted call — the turn stalls, or the approved retry never fires. Never retry in a loop. After ONE stalled/denied attempt, deliver via the paste fallback above so the user leaves with the document — and tell them the one-time fix: open the same conversation or connector from a surface that shows the approval dialog reliably (claude.ai on desktop), route one document there, and pick the lasting "always allow" option where offered; routing then works from mobile without prompts.
 
@@ -131,7 +137,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.9"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.10"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label for single, an ARRAY of labels for multi — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -179,7 +185,7 @@ No commentary, no category breakdown, no schema explanation.
 - Every inner fence body must `JSON.parse` cleanly — balanced brackets, no trailing commas, straight quotes.
 - Exact key names: `version` (`"1"`), `question` (**never `q`**), `options`, `items`, `questions` — per the primitive's shape.
 - `recommended`, when set, EXACTLY matches an option label (array for `multi-choice`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- Stamp `"skill_version": "3.9"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.10"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 ### Closing message (paste path)
 
@@ -219,7 +225,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.9","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.10","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -254,6 +260,10 @@ That's the entire post-output text.
 Note the shape: **each point got the primitive its verb demands** — a pick-one (`single-choice`, with `recommended` and the *why* in its lead-in), a pick-many (`multi-choice`), a genuinely-open point (`open-question` — no invented filler options), and an ordering of 4 concrete peers (`prioritize`). No `questionnaire` appears because no 3+ questions formed one cluster. `routing` rides the FIRST component; the send-back instruction also lives in the opening and closing prose, which is what the reviewer actually sees. The settled prose invites annotation explicitly. *(The leading/trailing `` ```` `` is the real four-backtick outer fence — one code block, one copy button; the `>` marks are only this doc's way of showing the block.)*
 
 ## Changelog
+
+### v3.10 (2026-08-18)
+- **The proactive trigger keys on the SHAPE of the ask, not on who raised it.** It used to fire only when "a working conversation has itself surfaced" the open points — provenance — so 3+ decision-shaped questions the skill's own host had *authored* (in a plan, a summary, an artifact, a PR comment) fell outside it and got pasted into chat. Now: 3+ open decisions awaiting the user fire it whichever side wrote them, with a guard (still open, addressed to the user, only they can settle it) so a question you can answer yourself never counts.
+- **A visual deliverable is complementary, not a substitute.** The skill was silent on artifacts/decks/reports, and that silence let both jobs collapse into one rendered page. Stated now: the artifact is what you LOOK AT, the routed doc is how you ANSWER — an artifact containing the open questions is the trigger, not the exemption.
 
 ### v3.9 (2026-08-08)
 - **The MCP connection is OPTIONAL — stated in the description, not just the body.** Missing, unauthorized, erroring, and never-installed are one case, and none of them block delivery: fall back to the local paste document. And **never hand-roll a substitute** — no invented `/r/` link, no ad-hoc form, no plain-prose list of the questions. A model that reads only the frontmatter now knows both halves.
