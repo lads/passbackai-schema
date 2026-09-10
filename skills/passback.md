@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.10"
+  version: "3.11"
   created: "05-05-2026"
-  updated: "2026-08-18"
+  updated: "2026-09-10"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -118,11 +118,11 @@ Skip: style preferences with no consequence, questions answered later in the sam
 - **One point per component.** Never lump unrelated questions into one `questionnaire` — that's the form feel this skill exists to kill.
 - **Settled prose is claims, not narrative.** Write the settled parts as short, explicit assertions the reviewer can cheaply confirm or contest ("We're assuming EU data residency is out of scope for v1") — crisp annotation targets, not a story. Prose is a first-class response channel; give it edges.
 
-**3.5 Check — read it as the reviewer.** Before delivering, one pass through the woven document *as the recipient, cold*: for each component — is this the real question or a proxy for it? Can they answer it better than a coin flip from what's on the page alone? Would their answer actually unblock the work? Fix or cut whatever fails; if a needed fact lives only in your head, it belongs in the lead-in.
+**3.5 Check — read it as the reviewer.** Before delivering, one pass through the woven document *as the recipient, cold*: for each component — is this the real question or a proxy for it? Can they answer it better than a coin flip from what's on the page alone? Would their answer actually unblock the work? Fix or cut whatever fails; if a needed fact lives only in your head, it belongs in the lead-in. Then run **The shape check** (below) over every component you're about to emit — the reviewer pass catches a weak question, the shape check catches a block that won't render at all.
 
 **4. Deliver** — by whether you are connected to PassbackAI over MCP:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The platform **validates each component as you generate it, writes the canonical fences for you, and returns a reviewer link** (`/r/<id>`). No smart-quote risk on this path. Stamp `"skill_version": "3.10"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id.
+- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.11"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
 - **NOT connected, or a route fails:** the MCP connection is **OPTIONAL** — missing, unauthorized, erroring, and never-installed are all the same case, and none of them block delivery. Fall back to **paste**: emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser. **Never hand-roll a substitute** — no invented `/r/` link, no ad-hoc "form" of your own design, no plain-prose list of the questions: the paste document IS the fallback, in the exact contract below.
 - **A stalled or denied tool APPROVAL is a fail — one attempt, then paste.** The first `route_document` call on a Claude surface may ask the user to approve the tool, and some surfaces (notably the mobile app) offer only a one-shot approval that does **not** re-arm the interrupted call — the turn stalls, or the approved retry never fires. Never retry in a loop. After ONE stalled/denied attempt, deliver via the paste fallback above so the user leaves with the document — and tell them the one-time fix: open the same conversation or connector from a surface that shows the approval dialog reliably (claude.ai on desktop), route one document there, and pick the lasting "always allow" option where offered; routing then works from mobile without prompts.
 
@@ -137,8 +137,8 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.10"` — different fields.
-- **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label for single, an ARRAY of labels for multi — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.11"` — different fields.
+- **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label **string** for single, an **ARRAY** of labels for multi — the wrong one of the two does not degrade, it kills the block; see The shape check — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
 - **`allocate`:** `items` (unique `id` + `label` + a numeric `weight` each — your proposed split); optional `total` (default 100), `unit` (`"%"` default, `"$"`, `"pts"`), `title`/`instruction`. The reviewer drags weighted bars that always sum to `total`.
@@ -159,6 +159,34 @@ Never ask a generic upfront question about modes or formats. Ask (once, briefly,
 - a SPECIFIC point can't be shaped — e.g. "I can't tell if these four items are alternatives to pick from or a sequence to order — which?"
 - self-answer vs send-to-someone is genuinely unclear (see routing above).
 
+## The shape check — run it on BOTH paths, before you deliver
+
+A component whose JSON doesn't match **its own fence tag** doesn't degrade politely and doesn't error: the renderer **rejects the whole block** and the reviewer sees a wall of raw JSON in a grey code box. The link works, the tool result looks clean, nothing in your turn goes red — you find out when the reviewer opens the document, which is the worst possible moment. A doc that loses its widgets has lost the only thing it was for.
+
+**Who catches it.** On the `route_document` path the server does: a block off its published shape is **rejected**, with the broken field named — so the failure is loud, cheap and in front of you, never in front of the reviewer. On the **paste** path nobody catches it: there is no server in the loop, so **you are the gate**. Either way, read every component you emit against this list before you deliver — on the routed path it saves you a round-trip, on paste it is the only check that exists.
+
+**FATAL — the block renders as raw code:**
+
+| The mistake | The shape that renders |
+|---|---|
+| `"recommended": ["A"]` on a **`single-choice`** | a **string** — `"recommended": "A"` |
+| `"recommended": "A"` on a **`multi-choice`** | an **array** — `"recommended": ["A"]` |
+| `"multi": true` inside a `single-choice` / `multi-choice` | drop it — the **TAG** is the discriminator; `multi` exists only on a `questionnaire` sub-question |
+| `"version": 1` (number) | `"version": "1"` (string), always |
+| `"options"` with fewer than 2 entries | 2+ entries — or it isn't a choice, it's an `open-question` |
+| `"options": [{"label": "A"}]` | plain strings — `"options": ["A", "B"]` |
+| `q` / `text` / `prompt` as the prompt key | `question` |
+| a `questionnaire` sub-question missing `id` or `options` | both required (`"options": []` + `open_field` for a free-text one) |
+| `"multi": "true"` (string) on a questionnaire sub-question | a real boolean `true` |
+| an `open-question` carrying `options`, or missing `version` | no `options` at all, and `"version": "1"` |
+| duplicate `id`s inside one `prioritize` / `allocate` | every id unique |
+| a full URL in `youtube.id` | the bare 11-char video id |
+| a field borrowed from another component (`questions` on a choice, `title` on a `single-choice`) | drop it — each tag has its own field set |
+
+**COSMETIC — the block still renders; fix it, but this is not what breaks a document:** a `recommended` whose *label* doesn't exactly match an option (the badge is silently dropped — a wasted nudge); smart quotes or a trailing comma in a fence body (the tolerant parser recovers them); an extra `context`/`placeholder` on a component that ignores it.
+
+**The confusion that produced this list.** `recommended` is the one field whose TYPE depends on the tag, and "a wrong `recommended` is only a wasted nudge" is true **only of a wrong label**. A wrong *type* takes the entire block down — a whole page of decisions can ship as JSON nobody can answer, because one array should have been a string. When you author several choice components in a row, check the `recommended` type on **each** one; that is exactly where the copy-paste momentum carries the wrong shape forward.
+
 ## JOB: PULL — read back the answers, then synthesize
 
 The user asks what came back on a doc they already routed. **Do not author a new document.**
@@ -170,22 +198,18 @@ If you don't know the document id, ask the user which routed document they mean.
 
 ## Output contract & validation — PASTE path only
 
-On the `route_document` path the platform validates the typed `blocks[]` for you, so the hardening below does **not** apply — but the field shapes are still the shapes you pass as typed arguments.
+On the `route_document` path the server writes the fences and the link, so the OUTPUT FORMAT below (the four-backtick wrapper, the closing paste instruction) does **not** apply there — but the field shapes are still the shapes you pass as typed arguments, and **The shape check above applies to both paths**.
 
 **Output two things, in this exact order, nothing else:**
 1. **The whole woven Markdown document, inside ONE single outer code fence** — the copy-once/paste-once contract: one code block, one copy button, one paste into PassbackAI.
    - **Use a FOUR-backtick outer fence** (` ```` `) so it can contain the inner three-backtick component fences without the nesting breaking. No info-string on the outer fence. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
    - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
-   - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string; smart quotes break `JSON.parse` and the block renders as raw code.
+   - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — see below.)
 2. A short closing message in the user's language (below), **outside** the outer fence.
 
 No commentary, no category breakdown, no schema explanation.
 
-**Validate before you output (paste path):**
-- Every inner fence body must `JSON.parse` cleanly — balanced brackets, no trailing commas, straight quotes.
-- Exact key names: `version` (`"1"`), `question` (**never `q`**), `options`, `items`, `questions` — per the primitive's shape.
-- `recommended`, when set, EXACTLY matches an option label (array for `multi-choice`) — graceful-ignored otherwise, so a mismatch is a wasted nudge.
-- Stamp `"skill_version": "3.10"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.11"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 ### Closing message (paste path)
 
@@ -225,7 +249,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.10","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.11","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -260,6 +284,9 @@ That's the entire post-output text.
 Note the shape: **each point got the primitive its verb demands** — a pick-one (`single-choice`, with `recommended` and the *why* in its lead-in), a pick-many (`multi-choice`), a genuinely-open point (`open-question` — no invented filler options), and an ordering of 4 concrete peers (`prioritize`). No `questionnaire` appears because no 3+ questions formed one cluster. `routing` rides the FIRST component; the send-back instruction also lives in the opening and closing prose, which is what the reviewer actually sees. The settled prose invites annotation explicitly. *(The leading/trailing `` ```` `` is the real four-backtick outer fence — one code block, one copy button; the `>` marks are only this doc's way of showing the block.)*
 
 ## Changelog
+
+### v3.11 (2026-09-10)
+- **The shape check, on both paths — the fatal/cosmetic line drawn where it actually falls.** A routed document shipped with every one of its choice blocks rendering as raw JSON: each carried `recommended` as a one-element ARRAY on a `single-choice`, whose `recommended` must be a string. The skill had made that outcome hard to see — it warned loudest about smart quotes (which the tolerant parser recovers) and described a wrong `recommended` as "graceful-ignored… a wasted nudge", which is true of a wrong LABEL and false of a wrong TYPE. It also told the model the `blocks[]` path was validated for it, so nothing needed checking there. Now: one FATAL list (every shape that makes the renderer drop the block to plain code) against one COSMETIC list, run on the MCP path as well as paste — and, because advice a model can skip is not a guarantee, `route_document` itself now **rejects** a block that cannot render (the call errors, nothing is stored, you fix the named field and call again), so a link with a raw-JSON widget can no longer be created at all.
 
 ### v3.10 (2026-08-18)
 - **The proactive trigger keys on the SHAPE of the ask, not on who raised it.** It used to fire only when "a working conversation has itself surfaced" the open points — provenance — so 3+ decision-shaped questions the skill's own host had *authored* (in a plan, a summary, an artifact, a PR comment) fell outside it and got pasted into chat. Now: 3+ open decisions awaiting the user fire it whichever side wrote them, with a guard (still open, addressed to the user, only they can settle it) so a question you can answer yourself never counts.
