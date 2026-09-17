@@ -1,13 +1,13 @@
 ---
 name: passback
-description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits, while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). No "review vs ask" mode — the unit of thinking is the individual ambiguity, never the document. The PassbackAI MCP connection is OPTIONAL — when it is missing, unauthorized, or fails, deliver via the local paste fallback. Never hand-roll a substitute document. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — OR proactively, whenever 3+ decision-shaped questions await the user — raised by the conversation, or authored by YOUR OWN output (plan, summary, artifact, doc). In ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
+description: Route any document into PassbackAI to collect structured feedback, and pull the answers back. ONE skill, two jobs — ROUTE (author one woven document that gives EVERY unclear point the interaction primitive that fits, while settled thinking stays prose the reviewer annotates; then deliver it) and PULL (read back what reviewers answered on a doc you sent). The MCP connection is OPTIONAL — missing, unauthorized or failing, ALWAYS deliver the same document as ONE four-backtick code block in the chat reply: never a file, never an artifact, never a hand-rolled substitute. Use whenever someone wants feedback on a draft, wants messy input turned into precise decision requests, wants to know what came back on a routed doc, or says "passbackai" / "/passback" — OR proactively, whenever 3+ decision-shaped questions await the user — raised by the conversation, or authored by YOUR OWN output (plan, summary, artifact, doc). In ANY language (e.g. Hebrew "תוציא שאלות פתוחות").
 license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.11"
+  version: "3.12"
   created: "05-05-2026"
-  updated: "2026-09-10"
+  updated: "2026-09-17"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -36,7 +36,7 @@ You don't only fire on an explicit request. The trigger is **not where the open 
 
 **One offer, not a nag.** If they decline or ignore it, drop it for the rest of the thread. For 1–2 quick factual gaps, just ask inline — this trigger is for when the open points are **several and decision-shaped**. On "yes" → run ROUTE below.
 
-**A visual deliverable does not discharge the trigger — the two are complementary.** Building a rendered surface for the same content (an HTML artifact, a slide deck, a report, a diagram) feels like the deliverable is done, and that is exactly how the routing gets skipped. They do different jobs: **the artifact is what the user LOOKS AT; the passback document is how they ANSWER.** A beautiful page whose open questions can only be replied to in chat prose collects no structured answers, so `list_responses` has nothing to pull. So: if the artifact you just built contains the open decisions, that is the **trigger**, not the exemption — ship the artifact AND offer the routed doc. (Don't duplicate: the artifact carries the exposition, the routed doc carries the questions, and it links to the artifact.)
+**A visual deliverable does not discharge the trigger — the two are complementary.** Building a rendered surface for the same content (an HTML artifact, a slide deck, a report, a diagram) feels like the deliverable is done, and that is exactly how the routing gets skipped. They do different jobs: **the artifact is what the user LOOKS AT; the passback document is how they ANSWER.** A beautiful page whose open questions can only be replied to in chat prose collects no structured answers, so `list_responses` has nothing to pull. So: if the artifact you just built contains the open decisions, that is the **trigger**, not the exemption — ship the artifact AND offer the routed doc. (Don't duplicate: the artifact carries the exposition, the routed doc carries the questions, and it links to the artifact.) **This never runs backwards — the passback document itself is never delivered AS an artifact, a canvas or a file.** It is a `/r/<id>` link when connected and a code block in the chat reply when not; see step 0.
 
 ## The palette — pick by verb, one primitive per point
 
@@ -98,6 +98,17 @@ The reviewer comes back with a comment on **node `B`**: *"the 'slow' branch shou
 
 The reviewer sees exactly what moves and can comment on the **`signed header` edge** in the *Proposed* diagram (*"what signs it — short-lived key? rotation?"*), then expresses the decision in the choice below the pair.
 
+## Step 0 — know your delivery path BEFORE you author
+
+There are exactly two delivery paths and no third. Establish which one you are on **before** you start weaving, not after the document exists:
+
+| | When | The last step is… |
+|---|---|---|
+| **Path A — connected** | the PassbackAI MCP tools (`route_document`, `list_responses`) are present and callable | call `route_document` with typed `blocks[]`; the server returns a `/r/<id>` reviewer link |
+| **Path B — not connected** | the tool is missing, unauthorized, erroring, never installed, or a route failed | emit the woven document as **one four-backtick code block in your chat reply** |
+
+**Path B is not a degraded mode, an error, or something to apologise for.** It is the local loop the product shipped with — fully featured — and it is the path most installs are on. So: don't report the missing connector as a problem, don't ask the user to connect anything first, don't offer to "try again once it's set up", and above all don't let the absence change WHAT you author. **The document is byte-for-byte the same work on both paths; only the final step differs.** Deciding this first is what stops the output shape from being improvised at the end — which is the one way this skill reliably fails.
+
 ## JOB: ROUTE — scan, shape, weave, check, deliver
 
 **1. Scan the decision space, not the text.** The marked gaps ("TBD", "we haven't decided X", "ask the team", conflicts between stated preferences) are the easy half — a text-only scan finds only what the author already knows is open. The gaps that make a document feel *sharp* are the unmarked ones, and they surface from a three-move scan:
@@ -120,11 +131,70 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 **3.5 Check — read it as the reviewer.** Before delivering, one pass through the woven document *as the recipient, cold*: for each component — is this the real question or a proxy for it? Can they answer it better than a coin flip from what's on the page alone? Would their answer actually unblock the work? Fix or cut whatever fails; if a needed fact lives only in your head, it belongs in the lead-in. Then run **The shape check** (below) over every component you're about to emit — the reviewer pass catches a weak question, the shape check catches a block that won't render at all.
 
-**4. Deliver** — by whether you are connected to PassbackAI over MCP:
+**4. Deliver.** Two paths (step 0), one document. These three rules hold on **both** — they are the output contract, and none of them bends:
 
-- **Connected (PREFERRED):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.11"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
-- **NOT connected, or a route fails:** the MCP connection is **OPTIONAL** — missing, unauthorized, erroring, and never-installed are all the same case, and none of them block delivery. Fall back to **paste**: emit the entire woven Markdown document inside **one single outer code fence** (see the Output contract), then the three-line paste instruction. Fully local; the document never leaves the browser. **Never hand-roll a substitute** — no invented `/r/` link, no ad-hoc "form" of your own design, no plain-prose list of the questions: the paste document IS the fallback, in the exact contract below.
-- **A stalled or denied tool APPROVAL is a fail — one attempt, then paste.** The first `route_document` call on a Claude surface may ask the user to approve the tool, and some surfaces (notably the mobile app) offer only a one-shot approval that does **not** re-arm the interrupted call — the turn stalls, or the approved retry never fires. Never retry in a loop. After ONE stalled/denied attempt, deliver via the paste fallback above so the user leaves with the document — and tell them the one-time fix: open the same conversation or connector from a surface that shows the approval dialog reliably (claude.ai on desktop), route one document there, and pick the lasting "always allow" option where offered; routing then works from mobile without prompts.
+- **Deliver in THIS turn.** You already authored it; ship it. Never "want me to write it up?", never a promise to produce it next turn, never a summary of what the document would contain instead of the document.
+- **Never a file. Never an artifact.** The document is delivered as **text inside your reply** and nowhere else: don't write it to disk, don't create it as an artifact / canvas / side document, don't offer it as a download or an attachment, don't put it in a repo. On a coding or agentic surface (Claude Code, Cursor, an IDE agent) the reflex for a multi-screen Markdown document is to `Write` it to a file — **here that reflex IS the bug**, and it is the single most common way this skill fails: a file forces the user to open it, hunt for the text, select it and copy it out, which is precisely the friction the one-code-block contract exists to delete. The user asked for a document to paste, not a document to find. Only an explicit request for a file overrides this.
+- **Never hand-roll a substitute.** No invented `/r/` link, no ad-hoc "form" of your own design, no plain-prose list of the questions in the chat body, no bulleted recap standing in for the woven document. Path A and Path B below are the only two outputs this skill has.
+
+**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.12"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
+
+**Path B — not connected (the paste document).** Missing, unauthorized, erroring, never-installed and route-failed are ONE case; none of them block delivery; the document is fully local and never leaves the browser. Output **exactly two things, in this order, and nothing else:**
+
+**(1) The whole woven document inside ONE outer FOUR-backtick fence** — the copy-once/paste-once contract: one code block, one copy button, one paste into PassbackAI.
+
+- **FOUR backticks** (` ```` `) on the outer fence, **no info-string**. Four, because the document contains three-backtick component fences: a three-backtick outer fence is closed by the first inner component fence, and the rest of the document spills into the chat as loose prose — that is exactly the "it didn't keep the format" failure. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
+- Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
+- **Straight ASCII quotes (`"`) only** — never `“ ” ‚ ’` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — run **The shape check** below.)
+- Stamp `"skill_version": "3.12"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+
+The literal shape (the outer four-backtick fence is the real output; this example is wrapped in five so it can show it):
+
+`````markdown
+````
+# <title>
+
+<1–3 sentences of framing — who it's from, what it's for, that none of it is a test>
+
+<lead-in prose: context, tradeoff, falsifier>
+
+```single-choice
+{"version":"1","skill_version":"3.12","question":"…","options":["…","…"],"recommended":"…"}
+```
+
+<lead-in prose for the next point>
+
+```open-question
+{"version":"1","question":"…"}
+```
+
+<closing prose — the send-back line>
+````
+`````
+
+**(2) The closing message**, in the user's language, **outside** the outer fence. N = how many decision points are woven in (count a `prioritize` as one):
+
+```
+N decision points.
+
+1. Copy the block above
+2. Open https://passbackai.com
+3. Click Paste
+```
+
+Hebrew variant:
+
+```
+N נקודות החלטה.
+
+1. העתק את הבלוק למעלה
+2. פתח את https://passbackai.com
+3. לחץ Paste
+```
+
+**That is the entire reply.** No preamble, no commentary, no category breakdown, no schema explanation, no "here's what I built" — and nothing at all after those three lines.
+
+**A stalled or denied tool APPROVAL is a fail — one attempt, then paste.** The first `route_document` call on a Claude surface may ask the user to approve the tool, and some surfaces (notably the mobile app) offer only a one-shot approval that does **not** re-arm the interrupted call — the turn stalls, or the approved retry never fires. Never retry in a loop. After ONE stalled/denied attempt, deliver via the paste fallback above so the user leaves with the document — and tell them the one-time fix: open the same conversation or connector from a surface that shows the approval dialog reliably (claude.ai on desktop), route one document there, and pick the lasting "always allow" option where offered; routing then works from mobile without prompts.
 
 **Long documents — communicate, don't shrink.** Routing re-generates the whole document as the tool call's arguments, so a long document means a long visible wait *before* the link appears. Never trim capability or drop open points to dodge that wait. Do two things instead:
 
@@ -196,45 +266,6 @@ The user asks what came back on a doc they already routed. **Do not author a new
 
 If you don't know the document id, ask the user which routed document they mean.
 
-## Output contract & validation — PASTE path only
-
-On the `route_document` path the server writes the fences and the link, so the OUTPUT FORMAT below (the four-backtick wrapper, the closing paste instruction) does **not** apply there — but the field shapes are still the shapes you pass as typed arguments, and **The shape check above applies to both paths**.
-
-**Output two things, in this exact order, nothing else:**
-1. **The whole woven Markdown document, inside ONE single outer code fence** — the copy-once/paste-once contract: one code block, one copy button, one paste into PassbackAI.
-   - **Use a FOUR-backtick outer fence** (` ```` `) so it can contain the inner three-backtick component fences without the nesting breaking. No info-string on the outer fence. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
-   - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
-   - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ '` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — see below.)
-2. A short closing message in the user's language (below), **outside** the outer fence.
-
-No commentary, no category breakdown, no schema explanation.
-
-- Stamp `"skill_version": "3.11"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
-
-### Closing message (paste path)
-
-After the document, output exactly this (translate to the user's language; N = how many decision points are woven in — count a prioritize as one):
-
-```
-N decision points.
-
-1. Copy the block above
-2. Open https://passbackai.com
-3. Click Paste
-```
-
-Hebrew variant:
-
-```
-N נקודות החלטה.
-
-1. העתק את הבלוק למעלה
-2. פתח את https://passbackai.com
-3. לחץ Paste
-```
-
-That's the entire post-output text.
-
 ## Worked example (ROUTE — a woven palette document)
 
 **Input:** "Mobile guest check-in feature — sending the open decisions to Elad. Haven't decided PIN vs room number; want to know which launch integrations to include; legal must confirm retention (genuinely open); and we have four launch markets queued — US, UK, Germany, Japan — that need a rollout order."
@@ -249,7 +280,7 @@ That's the entire post-output text.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.11","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.12","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -285,6 +316,11 @@ Note the shape: **each point got the primitive its verb demands** — a pick-one
 
 ## Changelog
 
+*Recent versions only — the full history (v1.0 → today) is published at <https://passbackai.com/skill#whats-new>.*
+
+### v3.12 (2026-09-17)
+- **The no-MCP path is now a specified path, not a fallback improvised at the end.** Delivery without the connector was the skill's least reliable moment: it would sometimes write the document to a FILE (on a coding surface the reflex for a long Markdown document is `Write` — and the skill, having never once said not to, lost to that reflex), sometimes print the questions as loose chat prose with the component fences broken or gone. Three causes, three fixes. (1) The paste format was a *cross-reference* — step 4 said "see the Output contract", 76 lines away, past four unrelated sections — so the format was reconstructed from memory at the exact moment it mattered; it is now stated **literally and in full, inline at the point of delivery**, with a skeleton of the four-backtick wrapper. (2) Nothing anywhere forbade a file, an artifact or a canvas; now an explicit rule does — the document is text in the reply, nowhere else, because a file re-introduces exactly the find-select-copy friction the one-code-block contract exists to delete. (3) The path was discovered *after* authoring, and "PREFERRED" / "fallback" framing cast paste as degradation, which invites improvisation; a new **step 0** settles the path before weaving and states that paste is the full local loop, not a broken connector. Also: the changelog moved to the website, cutting ~2.4KB of pure history out of the file every invocation loads.
+
 ### v3.11 (2026-09-10)
 - **The shape check, on both paths — the fatal/cosmetic line drawn where it actually falls.** A routed document shipped with every one of its choice blocks rendering as raw JSON: each carried `recommended` as a one-element ARRAY on a `single-choice`, whose `recommended` must be a string. The skill had made that outcome hard to see — it warned loudest about smart quotes (which the tolerant parser recovers) and described a wrong `recommended` as "graceful-ignored… a wasted nudge", which is true of a wrong LABEL and false of a wrong TYPE. It also told the model the `blocks[]` path was validated for it, so nothing needed checking there. Now: one FATAL list (every shape that makes the renderer drop the block to plain code) against one COSMETIC list, run on the MCP path as well as paste — and, because advice a model can skip is not a guarantee, `route_document` itself now **rejects** a block that cannot render (the call errors, nothing is stored, you fix the named field and call again), so a link with a raw-JSON widget can no longer be created at all.
 
@@ -295,65 +331,4 @@ Note the shape: **each point got the primitive its verb demands** — a pick-one
 ### v3.9 (2026-08-08)
 - **The MCP connection is OPTIONAL — stated in the description, not just the body.** Missing, unauthorized, erroring, and never-installed are one case, and none of them block delivery: fall back to the local paste document. And **never hand-roll a substitute** — no invented `/r/` link, no ad-hoc form, no plain-prose list of the questions. A model that reads only the frontmatter now knows both halves.
 
-### v3.8 (2026-07-17)
-- **Approval dead-end: one attempt, then paste.** A client-side tool-approval prompt that stalls or grants only one-shot (the mobile app) is treated as a delivery failure, not something to retry: after one attempt the skill falls back to paste so the user always leaves with the document, and names the one-time fix (approve the tool once from a surface that shows the dialog, e.g. desktop, choosing the lasting allow). Mirrors the same guidance now inlined in `route_document`'s own description for MCP-only models.
-
-### v3.7 (2026-07-17)
-- **Long documents: communicate, don't shrink.** Routing re-generates the document inside the tool call, so a long doc = a long wait before the link. The skill now says so up front in one line, and offers a staged split ONLY when it adds value — a dependency split where round-1 (hinge) answers sharpen the round-2 weave, pulled back via `list_responses`. Capability is never trimmed to shorten the wait, and independent rounds are never split.
-
-### v3.6 (2026-07-15)
-- **`youtube` (verb: watch) — a DISPLAY block.** Embed a video the reviewer watches and reacts to; it collects no answer and sits outside the settled-vs-open law. Reach for it whenever the doc references a video — pass the 11-char video id only, **never** a hand-written Markdown image link or an `img.youtube.com` URL.
-
-### v3.5 (2026-07-12)
-- **`allocate` (verb: split) joins the palette** — divide a fixed whole (budget / effort / headcount) across categories by weight. Discriminator: order is *which comes first* (`prioritize`); allocate is *how much each gets* (magnitudes summing to a whole) — percentages/dollars → allocate, 1st/2nd/3rd → prioritize.
-- **The law is stated two-sided — a floor as well as a ceiling.** Ceiling: a *settled* decision stays prose (don't componentize the decided — density is the form-y feel). Floor: an *open* decision always becomes a component, and when no sharp verb fits it the floor is `open-question`, never a demotion back to prose. The line is settled-vs-open, not fits-a-shape-vs-doesn't; restraint never means leaving the open unasked. This closes the under-use gap (a doc with real open points is never hollow) while keeping the over-use gap shut.
-
-### v3.4 (2026-07-09)
-- **The epistemic formula — genius inside, simple outside.** Scan the DECISION SPACE, not the text: reconstruct the goal, enumerate what it requires deciding, diff against what the text settles — so silently-made and never-made decisions surface, not just "TBD" markers. Options must partition the plausible answers; every lead-in states the tradeoff and the falsifier behind `recommended`; components arrive in blocking order with the hinge decision named; settled prose is written as contestable claims. New pre-delivery check: read the doc as the reviewer, cold. On the MCP path, `route_document` now returns advisory `weave.hints` when the woven structure has lapses — fix, re-route, revoke the old id.
-
-### v3.3 (2026-07-07)
-- **Proactive offer.** When a working conversation itself accumulates 3+ unresolved open decisions, offer once (non-pushy) to weave them into one PassbackAI page — the skill no longer waits only for an explicit "route this" request. One offer per thread; a decline is respected. Also: strict-spec frontmatter (only the agentskills.io-allowed keys) so the skill installs on third-party hosts (e.g. Dust).
-
-### v3.2 (2026-07-05)
-- **Shorter description.** The frontmatter `description` field exceeded the 1024-character limit some install surfaces enforce, blocking upload. Trimmed it (the removed trigger-phrase list is redundant with the `triggers:` array below). No behavior change.
-
-### v3.1 (2026-07-03)
-- **Language-agnostic triggers.** The skill fires on its trigger intents in ANY language — the trigger list no longer hard-codes one non-English set; Hebrew stays as an example. Authorship metadata corrected (`created_by` / `owner`).
-
-### v3.0 (2026-07-03)
-- **The palette.** One primitive per unclear point — `single-choice` (choose one), `multi-choice` (choose many), `open-question` (write), `prioritize` (order) — woven into prose; `questionnaire` is now the GROUP primitive (3+ tightly-related questions as one unit), no longer the default vessel. Prose is a first-class response channel (the reviewer annotates it), so the REVIEW-vs-ASK upfront question is retired: the document's content decides how much gets woven. Two jobs remain — ROUTE and PULL.
-
-### v2.3 (2026-07-02)
-- **Copy once, paste once.** The paste output is the whole document inside **one outer four-backtick fence** — a single code block with one copy button.
-- **Ask REVIEW vs ASK when unspecified** *(retired in v3.0 — no mode question exists anymore)*.
-
-### v2.2 (2026-06-30)
-- **Lean in with `recommended`.** Reach for `recommended` by default where there's an honest lean — the *why* lives in the prose lead-in.
-- **Prefer the default Other.** Omitting `open_field` keeps the edit-into-Other gesture; a custom label is the narrow directed-escape-hatch case.
-
-### v2.1 (2026-06-30)
-- **Document, not a form.** Prose sets up each question *before* it; one question per embedded fence; the explanation lives in the lead-in prose, not the `context` field.
-
-### v2.0 (2026-06-27)
-- **One skill, three jobs** (REVIEW / ASK / PULL — since consolidated into ROUTE/PULL by v3.0). Supersedes and renames the old `question-extractor` skill. Sharpened prioritize gate.
-
-### v1.6 (2026-06-26)
-- MCP delivery (`route_document`): route as typed `blocks[]` (server-validated, returns a reviewer link); paste is the fallback.
-
-### v1.5 (2026-06-21)
-- Recommended option (`recommended`): flag the suggested pick with a badge that doesn't pre-select.
-
-### v1.4 (2026-06-18)
-- Output hardening: fenced block, straight quotes, pre-send validation of exact key names.
-
-### v1.3 (2026-06-17)
-- Free-text questions (`open_field` + empty `options`).
-
-### v1.2 (2026-05-06)
-- Multi-select questions (`multi: true`).
-
-### v1.1 (2026-05-05)
-- Sections, routing, default Other field with edit-into-Other gesture.
-
-### v1.0 (2026-05-05)
-- Initial release (as `question-extractor`).
+*Older entries (v3.8 and below) — see <https://passbackai.com/skill#whats-new>.*
