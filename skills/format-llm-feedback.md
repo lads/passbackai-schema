@@ -5,7 +5,7 @@ description: |
   Markdown export that the originating model can apply to its last answer
   in one round-trip. Each note is paired with the verbatim quote it
   applies to AND the heading chain (or table row/column) the quote sits
-  under, so the model lands every fix on its exact target.
+  under, so every note carries an unambiguous target.
 license: MIT
 metadata:
   title: Format multi-point feedback as anchored Markdown for an LLM
