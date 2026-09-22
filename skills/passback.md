@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.12"
+  version: "3.13"
   created: "05-05-2026"
-  updated: "2026-09-17"
+  updated: "2026-09-22"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -25,6 +25,22 @@ metadata:
 | **PULL** | to know what came back on a doc they already sent | call `list_responses` and synthesize — **never author a new document** |
 
 Detect PULL from the request ("what came back", "did anyone respond", "pull the feedback on <doc>"). Everything else is ROUTE. **Do not ask the user to choose a mode** — the old REVIEW-vs-ASK question is retired; the document's own content decides how much gets woven. Ask a clarifying question only when a SPECIFIC point can't be shaped (see "Targeted clarifications" below).
+
+## The three standard asks — `/passback` with nothing typed after it
+
+The skill is the source of these asks: the user never has to remember, write or paste one. Invoked bare — `/passback` with no document and nothing in the thread to work on — **do not ask an open "what would you like?"**. Show these three, numbered, one line each, and take a number:
+
+1. **Summarize, then hand me the decisions** — the end of a stretch of work: what happened, and what is now waiting on them.
+2. **Pull the open questions out of this** — the start: a thread, a brief, a pile of notes, before anyone builds on a guess.
+3. **Explain it step by step** — understanding a process, deciding nothing.
+
+On a pick, run it against whatever the conversation holds:
+
+1. Open with a short, plain summary of what you did and what it changes for them. Then the decisions genuinely waiting on them — context in a sentence or two, what each option would mean in practice, and your own recommendation with the reason behind it and what would change your mind. Assume a smart reader with no technical background: simple language about a real tradeoff, never a simplified tradeoff.
+2. Pull out the open questions, including the ones nobody wrote down — decisions someone assumed silently, places where two stated wants pull against each other, anything missing you would otherwise guess at. Skip style preferences and anything you can settle yourself.
+3. A detailed step-by-step guide in the simplest, least technical language possible, each step saying what happens, who or what does it, and what they would see or do. **Ask nothing**; where something is unclear, make the sensible call and mark it in one line as an assumption they can comment on.
+
+**With material in the thread but no stated ask** — they typed `/passback` at the end of a working session — don't stop to ask: run **1**, it fits that moment, and close with one line naming 2 and 3. All three obey the weave law below either way (settled thinking stays prose, open points get their primitive, nothing is manufactured to fill the page). Someone who ignores the menu and describes their own ask gets an ordinary ROUTE — the menu is a shortcut, never a gate.
 
 ## When to offer it — the proactive trigger
 
@@ -137,7 +153,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 - **Never a file. Never an artifact.** The document is delivered as **text inside your reply** and nowhere else: don't write it to disk, don't create it as an artifact / canvas / side document, don't offer it as a download or an attachment, don't put it in a repo. On a coding or agentic surface (Claude Code, Cursor, an IDE agent) the reflex for a multi-screen Markdown document is to `Write` it to a file — **here that reflex IS the bug**, and it is the single most common way this skill fails: a file forces the user to open it, hunt for the text, select it and copy it out, which is precisely the friction the one-code-block contract exists to delete. The user asked for a document to paste, not a document to find. Only an explicit request for a file overrides this.
 - **Never hand-roll a substitute.** No invented `/r/` link, no ad-hoc "form" of your own design, no plain-prose list of the questions in the chat body, no bulleted recap standing in for the woven document. Path A and Path B below are the only two outputs this skill has.
 
-**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.12"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
+**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.13"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
 
 **Path B — not connected (the paste document).** Missing, unauthorized, erroring, never-installed and route-failed are ONE case; none of them block delivery; the document is fully local and never leaves the browser. Output **exactly two things, in this order, and nothing else:**
 
@@ -146,7 +162,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 - **FOUR backticks** (` ```` `) on the outer fence, **no info-string**. Four, because the document contains three-backtick component fences: a three-backtick outer fence is closed by the first inner component fence, and the rest of the document spills into the chat as loose prose — that is exactly the "it didn't keep the format" failure. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
 - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
 - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ ’` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — run **The shape check** below.)
-- Stamp `"skill_version": "3.12"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.13"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 The literal shape (the outer four-backtick fence is the real output; this example is wrapped in five so it can show it):
 
@@ -159,7 +175,7 @@ The literal shape (the outer four-backtick fence is the real output; this exampl
 <lead-in prose: context, tradeoff, falsifier>
 
 ```single-choice
-{"version":"1","skill_version":"3.12","question":"…","options":["…","…"],"recommended":"…"}
+{"version":"1","skill_version":"3.13","question":"…","options":["…","…"],"recommended":"…"}
 ```
 
 <lead-in prose for the next point>
@@ -207,7 +223,7 @@ N נקודות החלטה.
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.11"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.13"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label **string** for single, an **ARRAY** of labels for multi — the wrong one of the two does not degrade, it kills the block; see The shape check — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -280,7 +296,7 @@ If you don't know the document id, ask the user which routed document they mean.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.12","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.13","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -317,6 +333,9 @@ Note the shape: **each point got the primitive its verb demands** — a pick-one
 ## Changelog
 
 *Recent versions only — the full history (v1.0 → today) is published at <https://passbackai.com/skill#whats-new>.*
+
+### v3.13 (2026-09-22)
+- **The three standard asks live in the skill, so nobody has to remember a prompt.** The asks that produce the best documents — summarize-then-decide, pull-the-open-questions, explain-step-by-step — were folklore: they worked, they were re-typed from memory, and a first-time user had no way to know they existed. A bare `/passback` now shows the three by name and takes a number, and `/passback` at the end of a working session runs the first one instead of stopping to ask. Each ask also carries the clause that makes it work: a recommendation WITH its reason and what would change it (the half that was always missing), "simple language about a real tradeoff, never a simplified tradeoff" in place of the explain-like-I'm-15 framing that reliably produced condescension, and — on the no-questions guide — "state the assumption in one line" so an unclear point stops becoming a silent guess.
 
 ### v3.12 (2026-09-17)
 - **The no-MCP path is now a specified path, not a fallback improvised at the end.** Delivery without the connector was the skill's least reliable moment: it would sometimes write the document to a FILE (on a coding surface the reflex for a long Markdown document is `Write` — and the skill, having never once said not to, lost to that reflex), sometimes print the questions as loose chat prose with the component fences broken or gone. Three causes, three fixes. (1) The paste format was a *cross-reference* — step 4 said "see the Output contract", 76 lines away, past four unrelated sections — so the format was reconstructed from memory at the exact moment it mattered; it is now stated **literally and in full, inline at the point of delivery**, with a skeleton of the four-backtick wrapper. (2) Nothing anywhere forbade a file, an artifact or a canvas; now an explicit rule does — the document is text in the reply, nowhere else, because a file re-introduces exactly the find-select-copy friction the one-code-block contract exists to delete. (3) The path was discovered *after* authoring, and "PREFERRED" / "fallback" framing cast paste as degradation, which invites improvisation; a new **step 0** settles the path before weaving and states that paste is the full local loop, not a broken connector. Also: the changelog moved to the website, cutting ~2.4KB of pure history out of the file every invocation loads.
