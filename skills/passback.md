@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.15"
+  version: "3.16"
   created: "05-05-2026"
   updated: "2026-09-27"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
@@ -151,9 +151,33 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 - **Deliver in THIS turn.** You already authored it; ship it. Never "want me to write it up?", never a promise to produce it next turn, never a summary of what the document would contain instead of the document.
 - **Never a file. Never an artifact.** The document is delivered as **text inside your reply** and nowhere else: don't write it to disk, don't create it as an artifact / canvas / side document, don't offer it as a download or an attachment, don't put it in a repo. On a coding or agentic surface (Claude Code, Cursor, an IDE agent) the reflex for a multi-screen Markdown document is to `Write` it to a file — **here that reflex IS the bug**, and it is the single most common way this skill fails: a file forces the user to open it, hunt for the text, select it and copy it out, which is precisely the friction the one-code-block contract exists to delete. The user asked for a document to paste, not a document to find. Only an explicit request for a file overrides this.
+- **The reply points at the document — it never repeats it.** The document is what the user reads; your chat message is only the way in. Never restate its content in the reply: no summary of the points, no list of the questions or options, no recap of your recommendations, no "here's what's inside". At most **one or two short sentences of context** (why this document exists, what it covers) — and only when they help the user decide to open it. Everything else is the link, how to open it, and how the answers come back. Printing the content twice wastes the user's reading and teaches them to answer in chat instead of on the page.
+- **A link is always a Markdown link.** Write it as `[Open in PassbackAI →](<url>)` — never a bare URL, never the URL inside a code span or code block, never on a line with other text glued to it. A bare or wrapped URL often renders as unclickable text.
 - **Never hand-roll a substitute.** No invented `/r/` link, no `#s=` link you typed or "encoded" yourself (only the recipe's printed output is a link), no ad-hoc "form" of your own design, no plain-prose list of the questions in the chat body, no bulleted recap standing in for the woven document. Path A and Path B below are the only two outputs this skill has.
 
-**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.15"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
+**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.16"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
+
+**The Path A reply is exactly this, in the user's language, and nothing else** (N = decision points, a `prioritize` counts as one; the context line is optional — one or two sentences at most, never the document's content):
+
+```
+[Open in PassbackAI →](<the /r/ link route_document returned>)
+
+<optional: 1–2 sentences of context>
+
+N decision points. Answer on the page, then tell me here — I'll read your answers directly.
+```
+
+Hebrew variant:
+
+```
+[פתח ב-PassbackAI ←](<the /r/ link route_document returned>)
+
+<אופציונלי: משפט-שניים של הקשר>
+
+N נקודות החלטה. ענה בעמוד, ואז תגיד לי כאן — אקרא את התשובות ישירות.
+```
+
+The link the server returned is your link — copy it verbatim. Because you are connected, the answers come back through `list_responses` (see **JOB: PULL**): never ask the user to copy or paste their answers on this path.
 
 **Path B — not connected.** Missing, unauthorized, erroring, never-installed and route-failed are ONE case; none of them block delivery. The same document ships one of two ways — **B1 first whenever you can run a shell command**, B2 otherwise.
 
@@ -184,10 +208,12 @@ PASSBACK_DOC
 - **`FIX and re-run`** → a component's JSON doesn't parse. Fix the named block and run again — this is the shape check executing for you.
 - **`TOO LONG`**, no `python3`, the sandbox refuses, any other error → go to **B2** with the same document. No apology, no explanation — B2 is an equal path.
 
-**The B1 reply is exactly this, in the user's language, and nothing else** (N = decision points, a `prioritize` counts as one):
+**The B1 reply is exactly this, in the user's language, and nothing else** (N = decision points, a `prioritize` counts as one; the context line is optional — one or two sentences at most, never the document's content):
 
 ```
 [Open in PassbackAI →](<the printed URL>)
+
+<optional: 1–2 sentences of context>
 
 N decision points — the whole document is packed into the link. Answer, click **Pass back**, and paste here.
 ```
@@ -196,6 +222,8 @@ Hebrew variant:
 
 ```
 [פתח ב-PassbackAI ←](<the printed URL>)
+
+<אופציונלי: משפט-שניים של הקשר>
 
 N נקודות החלטה — כל המסמך ארוז בתוך הלינק. ענה, לחץ **Pass back**, והדבק כאן.
 ```
@@ -207,7 +235,7 @@ N נקודות החלטה — כל המסמך ארוז בתוך הלינק. ענ
 - **FOUR backticks** (` ```` `) on the outer fence, **no info-string**. Four, because the document contains three-backtick component fences: a three-backtick outer fence is closed by the first inner component fence, and the rest of the document spills into the chat as loose prose — that is exactly the "it didn't keep the format" failure. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
 - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
 - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ ’` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — run **The shape check** below.)
-- Stamp `"skill_version": "3.15"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.16"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 The literal shape (the outer four-backtick fence is the real output; this example is wrapped in five so it can show it):
 
@@ -220,7 +248,7 @@ The literal shape (the outer four-backtick fence is the real output; this exampl
 <lead-in prose: context, tradeoff, falsifier>
 
 ```single-choice
-{"version":"1","skill_version":"3.15","question":"…","options":["…","…"],"recommended":"…"}
+{"version":"1","skill_version":"3.16","question":"…","options":["…","…"],"recommended":"…"}
 ```
 
 <lead-in prose for the next point>
@@ -268,7 +296,7 @@ N נקודות החלטה.
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.15"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.16"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label **string** for single, an **ARRAY** of labels for multi — the wrong one of the two does not degrade, it kills the block; see The shape check — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -365,7 +393,7 @@ If you don't know the document id, ask the user which routed document they mean.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.15","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.16","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -402,6 +430,9 @@ Note the shape: **each point got the primitive its verb demands** — a pick-one
 ## Changelog
 
 *Recent versions only — the full history (v1.0 → today) is published at <https://passbackai.com/skill#whats-new>.*
+
+### v3.16 (2026-10-05)
+- **The chat reply is the way in, not a second copy of the document.** On the connected path the skill gave no reply template at all, so the model improvised one after `route_document` returned: it reprinted most of the document (the questions, the options, its recommendations) under the link, and sometimes left the link as a bare URL that didn't render as clickable. The user read everything twice, and the chat copy invited answers in chat instead of on the page. Now the connected path has a fixed reply like B1 and B2: a Markdown link, at most one or two sentences of context, the decision count, and how the answers come back. Connected, that's "tell me when you're done and I'll read them" (`list_responses`), never "paste them here". A new rule on every path forbids restating the document's content in the reply and requires the link to be a Markdown link, never a bare URL.
 
 ### v3.15 (2026-09-27)
 - **Answers come back as the compact bundle, not as a second copy of the whole document.** In v3.14 a link reviewer's primary button was **Share back**, which packs the WHOLE document plus the answers into a new link. Pasted into the chat, that link cost about 4× the tokens of the answers alone, and the model paid for it a second time by re-copying it into the decode recipe. The link now marks its document as captured from Claude, so the reviewer's primary button is **Pass back**. It copies only the answers and comments (the same bundle the paste path always used), and the app's "Copied! Now paste it back" sheet walks them home. The decode recipe stays for the one case that still needs it: a human the user forwarded the document to, who answers with Share back.
