@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.16"
+  version: "3.17"
   created: "05-05-2026"
-  updated: "2026-09-27"
+  updated: "2026-10-07"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -120,8 +120,10 @@ There are exactly two delivery paths and no third. Establish which one you are o
 
 | | When | The last step is… |
 |---|---|---|
-| **Path A — connected** | the PassbackAI MCP tools (`route_document`, `list_responses`) are present and callable | call `route_document` with typed `blocks[]`; the server returns a `/r/<id>` reviewer link |
+| **Path A — connected** | the PassbackAI MCP tools (`route_document`, `list_responses`) are present and callable — **check before you decide they aren't** (see below) | call `route_document` with typed `blocks[]`; the server returns a `/r/<id>` reviewer link |
 | **Path B — not connected** | the tool is missing, unauthorized, erroring, never installed, or a route failed | **B1** — you can run a shell command: pack the document into a one-click `#s=` link with the recipe below. **B2** — you can't, or B1 failed: emit it as **one four-backtick code block in your chat reply** |
+
+**Check the connector before you choose Path B — never conclude "not connected" from a listing.** Many harnesses list MCP tools only by NAME until you load them ("deferred" tools), and a harness can also show a second, stale PassbackAI entry as "needs authentication" while the working one sits deferred beside it. Neither means you are disconnected. If any `route_document` / `list_updates` tool name is visible in any form, load it (e.g. a tool-search for `PassbackAI`) and call **`list_updates`**: a result means Path A. Choose Path B only when no such tool exists or that call fails.
 
 **Path B is not a degraded mode, an error, or something to apologise for.** It is the local loop the product shipped with — fully featured — and it is the path most installs are on. So: don't report the missing connector as a problem, don't ask the user to connect anything first, don't offer to "try again once it's set up", and above all don't let the absence change WHAT you author. **The document is byte-for-byte the same work on both paths; only the final step differs.** Deciding this first is what stops the output shape from being improvised at the end — which is the one way this skill reliably fails.
 
@@ -155,7 +157,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 - **A link is always a Markdown link.** Write it as `[Open in PassbackAI →](<url>)` — never a bare URL, never the URL inside a code span or code block, never on a line with other text glued to it. A bare or wrapped URL often renders as unclickable text.
 - **Never hand-roll a substitute.** No invented `/r/` link, no `#s=` link you typed or "encoded" yourself (only the recipe's printed output is a link), no ad-hoc "form" of your own design, no plain-prose list of the questions in the chat body, no bulleted recap standing in for the woven document. Path A and Path B below are the only two outputs this skill has.
 
-**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.16"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
+**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.17"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
 
 **The Path A reply is exactly this, in the user's language, and nothing else** (N = decision points, a `prioritize` counts as one; the context line is optional — one or two sentences at most, never the document's content):
 
@@ -164,7 +166,7 @@ Skip: style preferences with no consequence, questions answered later in the sam
 
 <optional: 1–2 sentences of context>
 
-N decision points. Answer on the page, then tell me here — I'll read your answers directly.
+N decision points. Answer on the page — I'm waiting here and will pick up your answers the moment you submit.
 ```
 
 Hebrew variant:
@@ -174,10 +176,12 @@ Hebrew variant:
 
 <אופציונלי: משפט-שניים של הקשר>
 
-N נקודות החלטה. ענה בעמוד, ואז תגיד לי כאן — אקרא את התשובות ישירות.
+N נקודות החלטה. ענה בעמוד — אני ממתין כאן ואקלוט את התשובות ברגע שתשלח.
 ```
 
-The link the server returned is your link — copy it verbatim. Because you are connected, the answers come back through `list_responses` (see **JOB: PULL**): never ask the user to copy or paste their answers on this path.
+The link the server returned is your link — copy it verbatim. Because you are connected, the answers come back on their own: never ask the user to copy or paste their answers on this path, and never make them come back to say "I answered".
+
+**Then keep waiting — in the same turn.** Right after the reply, call **`wait_for_responses`** with the `documentId`. It holds for up to ~45 seconds and returns the moment the reviewer submits; when it returns `status: "waiting"` (normal, not an error), call it again with the same arguments. Keep going for about **15 minutes** — most reviewers who route-and-review answer inside that window. The moment answers land, continue straight into **JOB: PULL**'s synthesis. If nothing arrived after ~15 minutes, end the turn with one line ("I'll pick your answers up when you're back") — when the user returns, call `wait_for_responses` once (it returns at once if answers exist). Ending the turn right after the link is the bug this step exists to prevent.
 
 **Path B — not connected.** Missing, unauthorized, erroring, never-installed and route-failed are ONE case; none of them block delivery. The same document ships one of two ways — **B1 first whenever you can run a shell command**, B2 otherwise.
 
@@ -235,7 +239,7 @@ N נקודות החלטה — כל המסמך ארוז בתוך הלינק. ענ
 - **FOUR backticks** (` ```` `) on the outer fence, **no info-string**. Four, because the document contains three-backtick component fences: a three-backtick outer fence is closed by the first inner component fence, and the rest of the document spills into the chat as loose prose — that is exactly the "it didn't keep the format" failure. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
 - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
 - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ ’` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — run **The shape check** below.)
-- Stamp `"skill_version": "3.16"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.17"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 The literal shape (the outer four-backtick fence is the real output; this example is wrapped in five so it can show it):
 
@@ -248,7 +252,7 @@ The literal shape (the outer four-backtick fence is the real output; this exampl
 <lead-in prose: context, tradeoff, falsifier>
 
 ```single-choice
-{"version":"1","skill_version":"3.16","question":"…","options":["…","…"],"recommended":"…"}
+{"version":"1","skill_version":"3.17","question":"…","options":["…","…"],"recommended":"…"}
 ```
 
 <lead-in prose for the next point>
@@ -296,7 +300,7 @@ N נקודות החלטה.
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.16"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.17"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label **string** for single, an **ARRAY** of labels for multi — the wrong one of the two does not degrade, it kills the block; see The shape check — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -350,7 +354,7 @@ A component whose JSON doesn't match **its own fence tag** doesn't degrade polit
 
 The user asks what came back on a doc they already routed. **Do not author a new document.**
 
-- **Connected:** call **`list_responses`** with the document id. It returns each reviewer's `verdict`, leaf-anchored `annotations[]` (their comments on the prose), and leaf-free `componentInputs[]` (their component answers) — a pull, no webhook. Then **synthesize for the user**: the verdict, the structured answers, and the free-form notes in their own language; surface conflicts and anything still unanswered.
+- **Connected:** call **`list_responses`** with the document id (or **`wait_for_responses`** if you are still waiting on the reviewer — same payload, but it holds until they submit). It returns each reviewer's `verdict`, leaf-anchored `annotations[]` (their comments on the prose), and leaf-free `componentInputs[]` (their component answers) — a pull, no webhook. Then **synthesize for the user**: the verdict, the structured answers, and the free-form notes in their own language; surface conflicts and anything still unanswered.
 - **Not connected:** the answers come back pasted into the chat, one of two ways. **An export bundle** (text — what a B1 reviewer's **Pass back** button copies: only their answers and comments, the cheapest return there is) → read it and synthesize the same way. **A `passbackai.com/review#s=…` link** → a human the user forwarded the document to answered with **Share back**, which packs the WHOLE document plus their answers into a link. You can't read it by eye. Run this exact recipe with the pasted link between the `PASSBACK_LINK` lines. It prints the reviewer's name, each component paired with its answer (`null` = unanswered), and their comments on the prose. Synthesize from that. No shell, or the recipe says `PASSWORD-PROTECTED` → ask them to open the link and use **⋯ → Copy document + comments**, then paste the text here.
 
 <!-- passback-pull-recipe:start -->
@@ -393,7 +397,7 @@ If you don't know the document id, ask the user which routed document they mean.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.16","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.17","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -430,6 +434,10 @@ Note the shape: **each point got the primitive its verb demands** — a pick-one
 ## Changelog
 
 *Recent versions only — the full history (v1.0 → today) is published at <https://passbackai.com/skill#whats-new>.*
+
+### v3.17 (2026-10-07)
+- **Answers arrive without you saying "I answered".** On the connected path the reply ended with "answer, then tell me here", so the model routed the document and ended its turn, and the user had to come back to the chat to wake it — even though the server has had `wait_for_responses` (hold until the reviewer submits) since August. Now the model stays in the turn after sending the link and keeps calling `wait_for_responses` for about 15 minutes, the window most route-and-review answers land in, then picks your answers up the moment you submit. The `route_document` result says the same, so this works even where an older skill is installed.
+- **"Not connected" is checked, not guessed.** A harness can list the PassbackAI tools by name only until they are loaded, or show a stale second entry as "needs authentication" next to the working one. The model read that as disconnected and fell back to Path B. Step 0 now requires loading the tools and calling `list_updates` before choosing Path B.
 
 ### v3.16 (2026-10-05)
 - **The chat reply is the way in, not a second copy of the document.** On the connected path the skill gave no reply template at all, so the model improvised one after `route_document` returned: it reprinted most of the document (the questions, the options, its recommendations) under the link, and sometimes left the link as a bare URL that didn't render as clickable. The user read everything twice, and the chat copy invited answers in chat instead of on the page. Now the connected path has a fixed reply like B1 and B2: a Markdown link, at most one or two sentences of context, the decision count, and how the answers come back. Connected, that's "tell me when you're done and I'll read them" (`list_responses`), never "paste them here". A new rule on every path forbids restating the document's content in the reply and requires the link to be a Markdown link, never a bare URL.
