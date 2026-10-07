@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "3.17"
+  version: "3.18"
   created: "05-05-2026"
   updated: "2026-10-07"
   triggers: "route this for review; get feedback on this draft; extract open questions; what's still unclear; turn this into a questionnaire; create a passback doc; what came back on the doc I sent; did anyone answer; passbackai; a plan/summary/artifact you just wrote that asks the user 3+ open decisions; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
@@ -120,7 +120,7 @@ There are exactly two delivery paths and no third. Establish which one you are o
 
 | | When | The last step is… |
 |---|---|---|
-| **Path A — connected** | the PassbackAI MCP tools (`route_document`, `list_responses`) are present and callable — **check before you decide they aren't** (see below) | call `route_document` with typed `blocks[]`; the server returns a `/r/<id>` reviewer link |
+| **Path A — connected** | the PassbackAI MCP tools (`route_document`, `list_responses`) are present and callable — **check before you decide they aren't** (see below) | call `route_document` with typed `blocks[]`; the server returns the creator's private `/d/<id>` preview link (they mint the `/r/<id>` reviewer link from it) |
 | **Path B — not connected** | the tool is missing, unauthorized, erroring, never installed, or a route failed | **B1** — you can run a shell command: pack the document into a one-click `#s=` link with the recipe below. **B2** — you can't, or B1 failed: emit it as **one four-backtick code block in your chat reply** |
 
 **Check the connector before you choose Path B — never conclude "not connected" from a listing.** Many harnesses list MCP tools only by NAME until you load them ("deferred" tools), and a harness can also show a second, stale PassbackAI entry as "needs authentication" while the working one sits deferred beside it. Neither means you are disconnected. If any `route_document` / `list_updates` tool name is visible in any form, load it (e.g. a tool-search for `PassbackAI`) and call **`list_updates`**: a result means Path A. Choose Path B only when no such tool exists or that call fails.
@@ -155,14 +155,14 @@ Skip: style preferences with no consequence, questions answered later in the sam
 - **Never a file. Never an artifact.** The document is delivered as **text inside your reply** and nowhere else: don't write it to disk, don't create it as an artifact / canvas / side document, don't offer it as a download or an attachment, don't put it in a repo. On a coding or agentic surface (Claude Code, Cursor, an IDE agent) the reflex for a multi-screen Markdown document is to `Write` it to a file — **here that reflex IS the bug**, and it is the single most common way this skill fails: a file forces the user to open it, hunt for the text, select it and copy it out, which is precisely the friction the one-code-block contract exists to delete. The user asked for a document to paste, not a document to find. Only an explicit request for a file overrides this.
 - **The reply points at the document — it never repeats it.** The document is what the user reads; your chat message is only the way in. Never restate its content in the reply: no summary of the points, no list of the questions or options, no recap of your recommendations, no "here's what's inside". At most **one or two short sentences of context** (why this document exists, what it covers) — and only when they help the user decide to open it. Everything else is the link, how to open it, and how the answers come back. Printing the content twice wastes the user's reading and teaches them to answer in chat instead of on the page.
 - **A link is always a Markdown link.** Write it as `[Open in PassbackAI →](<url>)` — never a bare URL, never the URL inside a code span or code block, never on a line with other text glued to it. A bare or wrapped URL often renders as unclickable text.
-- **Never hand-roll a substitute.** No invented `/r/` link, no `#s=` link you typed or "encoded" yourself (only the recipe's printed output is a link), no ad-hoc "form" of your own design, no plain-prose list of the questions in the chat body, no bulleted recap standing in for the woven document. Path A and Path B below are the only two outputs this skill has.
+- **Never hand-roll a substitute.** No invented `/d/` or `/r/` link, no `#s=` link you typed or "encoded" yourself (only the recipe's printed output is a link), no ad-hoc "form" of your own design, no plain-prose list of the questions in the chat body, no bulleted recap standing in for the woven document. Path A and Path B below are the only two outputs this skill has.
 
-**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns a reviewer link** (`/r/<id>`) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.17"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
+**Path A — connected (`route_document`):** call **`route_document`** with a typed **`blocks[]`** array — the woven sequence, in reading order: `{ "type": "markdown", "text": "…" }` for each prose run, and each component as its own typed block (`{ "type": "single-choice", "version": "1", "question": "…", "options": […] }`, etc.). The server **writes the canonical fences for you and returns the creator's private preview link** (`previewLink`, `/d/<id>` — it opens for them alone; they press **Create share link** there to mint the `/r/<id>` link a reviewer opens) — and **refuses the whole call** when any block would render as raw JSON instead of a widget: you get an error naming the block and the broken field, and **nothing is stored, no link exists**. That is a **server error message, not the approval dead-end below**: fix the named fields and call `route_document` again in the same turn — never retry it unchanged, and never fall back to paste over it. Run **The shape check** below before you call, and the retry costs you nothing at all. Stamp `"skill_version": "3.18"` on the first component block (and it's harmless on all). If the result carries **`weave.hints`**, treat them as review notes on your weaving: fix what they name, call `route_document` again with the corrected blocks, share the NEW link, and `revoke_document` the old id. (Hints are about the WEAVE — framing prose, a wasted `recommended` label, too many components. A shape that can't render never reaches a hint: it was rejected before anything was stored.)
 
 **The Path A reply is exactly this, in the user's language, and nothing else** (N = decision points, a `prioritize` counts as one; the context line is optional — one or two sentences at most, never the document's content):
 
 ```
-[Open in PassbackAI →](<the /r/ link route_document returned>)
+[Open in PassbackAI →](<the previewLink route_document returned>)
 
 <optional: 1–2 sentences of context>
 
@@ -172,7 +172,7 @@ N decision points. Answer on the page — I'm waiting here and will pick up your
 Hebrew variant:
 
 ```
-[פתח ב-PassbackAI ←](<the /r/ link route_document returned>)
+[פתח ב-PassbackAI ←](<the previewLink route_document returned>)
 
 <אופציונלי: משפט-שניים של הקשר>
 
@@ -181,7 +181,7 @@ N נקודות החלטה. ענה בעמוד — אני ממתין כאן ואק
 
 The link the server returned is your link — copy it verbatim. Because you are connected, the answers come back on their own: never ask the user to copy or paste their answers on this path, and never make them come back to say "I answered".
 
-**Then keep waiting — in the same turn.** Right after the reply, call **`wait_for_responses`** with the `documentId`. It holds for up to ~45 seconds and returns the moment the reviewer submits; when it returns `status: "waiting"` (normal, not an error), call it again with the same arguments. Keep going for about **15 minutes** — most reviewers who route-and-review answer inside that window. The moment answers land, continue straight into **JOB: PULL**'s synthesis. If nothing arrived after ~15 minutes, end the turn with one line ("I'll pick your answers up when you're back") — when the user returns, call `wait_for_responses` once (it returns at once if answers exist). Ending the turn right after the link is the bug this step exists to prevent.
+**Then keep waiting — in the same turn.** Right after the reply, call **`wait_for_responses`** with the `documentId`. It holds for up to ~45 seconds and returns the moment the reviewer submits; when it returns `status: "waiting"` (normal, not an error), call it again with the same arguments, until its `nextStep` says to stop — the server ends the window about **15 minutes** after the document was routed (most route-and-review answers land inside it). The moment answers land, continue straight into **JOB: PULL**'s synthesis. If the server says stop, end the turn with one line ("I'll pick your answers up when you're back") — when the user returns, call `wait_for_responses` once (it returns at once if answers exist). Ending the turn right after the link is the bug this step exists to prevent.
 
 **Path B — not connected.** Missing, unauthorized, erroring, never-installed and route-failed are ONE case; none of them block delivery. The same document ships one of two ways — **B1 first whenever you can run a shell command**, B2 otherwise.
 
@@ -239,7 +239,7 @@ N נקודות החלטה — כל המסמך ארוז בתוך הלינק. ענ
 - **FOUR backticks** (` ```` `) on the outer fence, **no info-string**. Four, because the document contains three-backtick component fences: a three-backtick outer fence is closed by the first inner component fence, and the rest of the document spills into the chat as loose prose — that is exactly the "it didn't keep the format" failure. The copy button strips the outer markers, so the clipboard receives the exact document, inner fences intact.
 - Inside it: the interleaved structure — prose paragraphs with each component in its **own inner fence** (` ```single-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```multi-choice `, ` ```questionnaire `), a complete bare-JSON object in each.
 - **Straight ASCII quotes (`"`) only** — never `“ ” ‚ ’` — for every JSON key and string. (The paste parser is tolerant enough to recover smart quotes and a trailing comma; that safety net is there for a HUMAN paste, not as your licence to be sloppy. What it can never recover is a wrong SHAPE — run **The shape check** below.)
-- Stamp `"skill_version": "3.17"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
+- Stamp `"skill_version": "3.18"` on the first component fence. Unsure of your own version? **Omit it** rather than guess low (a wrong low value triggers a false "update your skill" banner).
 
 The literal shape (the outer four-backtick fence is the real output; this example is wrapped in five so it can show it):
 
@@ -252,7 +252,7 @@ The literal shape (the outer four-backtick fence is the real output; this exampl
 <lead-in prose: context, tradeoff, falsifier>
 
 ```single-choice
-{"version":"1","skill_version":"3.17","question":"…","options":["…","…"],"recommended":"…"}
+{"version":"1","skill_version":"3.18","question":"…","options":["…","…"],"recommended":"…"}
 ```
 
 <lead-in prose for the next point>
@@ -300,7 +300,7 @@ N נקודות החלטה.
 
 ### Component field notes (the renderer's contract, compressed)
 
-- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.17"` — different fields.
+- `version` is always the string `"1"` (the schema version); `skill_version` is this skill's `"3.18"` — different fields.
 - **`single-choice` / `multi-choice`:** `question` (never the key `q`), `options` (2–4 short, genuinely distinct labels; 2–6 for multi), optional `recommended` (a label **string** for single, an **ARRAY** of labels for multi — the wrong one of the two does not degrade, it kills the block; see The shape check — set it whenever you have an honest lean, which is most of the time; the badge marks *which*, your lead-in prose says *why*; must exactly match option labels). Don't put "Other" in `options` — the renderer adds a localized Other row with an edit-into-Other gesture; a custom `open_field.label` ("I need to check with:") replaces it only when the escape-hatch genuinely needs a directed phrase.
 - **`open-question`:** `question` + optional `placeholder`. The answer field IS the answer — no options.
 - **`prioritize`:** `items` (unique `id` + `label` each); the array order is your suggested starting order; optional `title`/`instruction`.
@@ -381,7 +381,7 @@ PASSBACK_LINK
 ```
 <!-- passback-pull-recipe:end -->
 
-If you don't know the document id, ask the user which routed document they mean.
+If you don't know the document id, call **`list_updates`** (connected) — it lists every routed document with its id, title and `status` (`awaiting` / `answered`); pick by title, and ask the user only if two titles could both be the one they mean.
 
 ## Worked example (ROUTE — a woven palette document)
 
@@ -397,7 +397,7 @@ If you don't know the document id, ask the user which routed document they mean.
 > First, the front door. We never settled how a guest proves who they are at check-in — room number alone is the lightest, but it's also the weakest. I'd lean to room number + PIN: one extra field, and it closes the "anyone who sees a door number is in" hole.
 >
 > ```single-choice
-> {"version":"1","skill_version":"3.17","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
+> {"version":"1","skill_version":"3.18","question":"What authentication method should guests use at check-in?","options":["Room number only","Room number + PIN","Last name + booking ref","Magic link"],"recommended":"Room number + PIN","routing":{"from":"Dana","return_prompt":"When done, send your answers back to Dana."}}
 > ```
 >
 > Next, launch integrations — pick everything that should be in v1. I'd start with the two the front desk already lives in.
@@ -434,6 +434,11 @@ Note the shape: **each point got the primitive its verb demands** — a pick-one
 ## Changelog
 
 *Recent versions only — the full history (v1.0 → today) is published at <https://passbackai.com/skill#whats-new>.*
+
+### v3.18 (2026-10-07)
+- **The link is named for what it is.** `route_document` returns the creator's private preview link (`/d/<id>`, opens for them alone), not a reviewer link; the creator mints the `/r/<id>` share link from that page. The skill, the spec and the tool description now say so, so the model stops telling the creator to forward a link nobody else can open.
+- **The server decides when to stop waiting.** `wait_for_responses` now reports how long the document has been pending and says stop once the window (about 15 minutes after routing) has passed, so the model no longer has to count its own calls.
+- **No more asking for an id the model can look up.** In PULL, a missing document id is found with `list_updates` (now with `status` and `expiresAt`) instead of asking the user.
 
 ### v3.17 (2026-10-07)
 - **Answers arrive without you saying "I answered".** On the connected path the reply ended with "answer, then tell me here", so the model routed the document and ended its turn, and the user had to come back to the chat to wake it — even though the server has had `wait_for_responses` (hold until the reviewer submits) since August. Now the model stays in the turn after sending the link and keeps calling `wait_for_responses` for about 15 minutes, the window most route-and-review answers land in, then picks your answers up the moment you submit. The `route_document` result says the same, so this works even where an older skill is installed.
