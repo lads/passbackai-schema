@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.1"
+  version: "4.2"
   created: "05-05-2026"
   updated: "2026-10-07"
   triggers: "a plan/summary/artifact you just wrote that asks the user 3+ open decisions; route this for review; get feedback on this draft; extract open questions; turn this into a questionnaire; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
@@ -63,14 +63,14 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 | *prose* | annotate | react to settled thinking — no widget |
 | `single-choice` | choose one | pick one of 2–4 genuinely distinct options |
 | `multi-choice` | choose many | pick all that apply |
-| `open-question` | write | give a free answer — nothing to enumerate |
-| `prioritize` | order | rank ≥3 concrete, comparable peers (1st/2nd/3rd) |
+| `open-question` | write | give a free answer to one specific point |
+| `prioritize` | order | rank ≥3 concrete, comparable peers (1st/2nd/3rd) — only if the order is open |
 | `allocate` | split | divide a fixed whole by weight (percent, dollars, points) |
 | `questionnaire` | group | work through 3+ TIGHTLY related questions as one cluster |
 | `youtube` | watch | see a video the document references (display — no answer) |
 | `mermaid` | watch | see a structure the decision depends on (display — no answer) |
 
-**The weave law is two-sided — the one rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget; density is what makes a document feel like a form. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**, not "fits a shape". A two-way "ranking" is a `single-choice`; don't invent filler options to force a choice on an open point; don't split one real cluster into lonely blocks, and don't lump unrelated questions into a `questionnaire`. Display blocks sit outside the law: a referenced video is embedded as a `youtube` block (never a Markdown image link or an `img.youtube.com` URL — that host is blocked and renders broken), whether or not anything about it is open.
+**The weave law is two-sided — the one rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget; density is what makes a document feel like a form. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**, not "fits a shape". An order you'd confidently recommend is settled too: a numbered prose list, not `prioritize`. No catch-all "anything else?" closer: it comes back blank. A two-way "ranking" is a `single-choice`; don't invent filler options to force a choice on an open point; don't split one real cluster into lonely blocks, and don't lump unrelated questions into a `questionnaire`. Display blocks sit outside the law: a referenced video is embedded as a `youtube` block (never a Markdown image link or an `img.youtube.com` URL — that host is blocked and renders broken), whether or not anything about it is open.
 
 ### Diagrams — `mermaid` when structure gets dense
 
