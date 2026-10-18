@@ -1,19 +1,19 @@
 ---
 name: passback
-description: Turn open decisions into one interactive PassbackAI page, then act on the answers. Use proactively whenever 3+ decision-shaped questions await the user — raised by the conversation or written in your own plan, summary or artifact — and whenever someone wants feedback on a draft, open questions pulled out of messy input, or to know what came back on a doc they sent, or says "passbackai" / "/passback". Any language. The MCP connector is optional — without it, deliver a one-click link or ONE code block in the reply, never a file or an artifact.
+description: Turn open decisions into one interactive PassbackAI page, then act on the answers. Use proactively whenever 3+ decision-shaped questions await the user — raised by the conversation or written in your own plan, summary or artifact — and whenever someone wants feedback on a draft, a decision from someone else, open questions pulled out of messy input, or to know what came back on a doc they sent, or says "passbackai" / "/passback". Any language. The MCP connector is optional — without it, deliver a one-click link or ONE code block in the reply, never a file or an artifact.
 license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.2"
+  version: "4.3"
   created: "05-05-2026"
-  updated: "2026-10-07"
-  triggers: "a plan/summary/artifact you just wrote that asks the user 3+ open decisions; route this for review; get feedback on this draft; extract open questions; turn this into a questionnaire; what came back on the doc I sent; did anyone answer; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
+  updated: "2026-10-18"
+  triggers: "a plan/summary/artifact you just wrote that asks the user 3+ open decisions; route this for review; get feedback on this draft; extract open questions; turn this into a questionnaire; what came back on the doc I sent; did anyone answer; ask <name> in PassbackAI; get someone else's decision or input; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
 
-PassbackAI closes a loop: you **route** one document — settled thinking as prose, each open point as an interactive widget — a human answers on the page, and you **resume your work from their answers**. The reviewer is usually the user themself; sometimes someone they send the link to.
+PassbackAI closes a loop: you **route** one document — settled thinking as prose, each open point as an interactive widget — a human answers on the page, and you **resume your work from their answers**. The reviewer is usually the user themself; sometimes someone else they want to ask.
 
 ## The five principles — everything below applies them
 
@@ -50,7 +50,7 @@ The trigger is not where the open points came from — it is that **3+ decision-
 
 - **Connected, and the user has asked for or accepted routing in this conversation (or has a standing instruction to route, e.g. in their project instructions) → route it**, without asking again. Don't drip the questions in chat: route the document and say so in your one-line reply.
 - **Connected, no such go-ahead → offer once**, in one line, saying the document will be stored on PassbackAI's server so the answers come back here. Routing is an opt-in egress, never the silent default.
-- **Not connected → offer once**, in one line ("There are 5 open points here — want me to turn them into one PassbackAI page you can answer in one pass?"). Declined or ignored → drop it for the rest of the thread.
+- **Not connected → offer once**, in one line. Declined or ignored → drop it for the rest of the thread.
 - **What counts:** still open, addressed to the user, and only they can settle it. A question you can answer by reading the code, the repo or the thread is not a decision — go answer it. Rhetorical questions and 1–2 quick factual gaps don't count; ask those inline.
 - **A visual deliverable does not discharge it.** An HTML artifact, deck or report is what the user LOOKS AT; the passback document is how they ANSWER. If your artifact contains the open decisions, ship the artifact AND the routed document (exposition there, questions here, linking to it).
 
@@ -74,7 +74,7 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 
 ### Diagrams — `mermaid` when structure gets dense
 
-A diagram is a **comprehension** aid, not a decision: it makes a structure graspable so the reviewer reacts to the right thing, and they can comment on any node, edge or the whole diagram — "this is unclear" becomes a comment pinned to one box.
+A diagram is a **comprehension** aid, not a decision: it makes a structure graspable, and the reviewer can comment on any node or edge.
 
 - **Reach** when you describe a process, flow, mechanism, sequence, state machine, decision tree, architecture, dependency order or timeline — placed right after the sentence it clarifies, never in an appendix.
 - **A PAIR** (before → after, current vs proposed) is often the highest-value move when the doc weighs a change — but only when each side is structurally non-trivial. A plain two-option choice stays a `single-choice` and a sentence. The decision itself still rides a component after the pair.
@@ -104,7 +104,7 @@ Path B is not a degraded mode, an error, or something to apologise for — it is
 - **Prose before every component:** the context, what each real option *costs*, and — when you set `recommended` — why you lean that way and what would change your mind. The explanation lives in this lead-in, not in the per-question `context` field.
 - **Open with 1–3 sentences of framing** (who it's from, what it's for, none of it is a test) and close with a send-back line. The embedded renderer does not show `title` or `routing.return_prompt`, so framing lives in prose.
 - **Settled prose is claims, not narrative** — short assertions the reviewer can cheaply confirm or contest ("We're assuming EU data residency is out of scope for v1").
-- **Reviewer = the user, by default.** Add `routing: {"from": "<sender>", "return_prompt": "…send back to <sender>."}` on the first component ONLY when the user names someone else to send it to (`return_prompt` must contain the literal `from`), and say it in the framing prose too. Never ask "are you answering these yourself?".
+- **Reviewer = the user, by default.** Add `routing: {"from": "<sender>", "return_prompt": "…send back to <sender>."}` on the first component ONLY when the user names someone else to send it to (`return_prompt` must contain the literal `from`), and say it in the framing prose too. Connected? Set `recipient` as well — see **Asking someone else**. Never ask "are you answering these yourself?".
 
 **4. Check — read it as the reviewer, cold.** For each component: is it the real question or a proxy? Can they beat a coin flip from what's on the page? Would the answer unblock the work? A fact that lives only in your head belongs in the lead-in. Then run **the shape table** below over every component.
 
@@ -282,6 +282,19 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 - `id`s (`prioritize`, `allocate`, `questionnaire`) stay short Latin slugs (`us`, `q1`) — they're keys, never shown.
 - Don't START a Hebrew or Arabic label with an English term: when neither script clearly dominates a mixed line, its direction falls to the first strong character, so "API של התשלומים" can lay out left-to-right with its punctuation scrambled. Write "התשלומים דרך ה-API" — the Latin term mid-sentence.
 - **Mermaid labels** (verified against the shipped Mermaid parser): Hebrew text is fine unquoted (`A[בקשה נכנסת]`), but a label containing `(` `)` or a quote fails to parse in ANY language — wrap it in double quotes, escaped inside the JSON string: `A[\"שרת (ראשי)\"]`, and the same for edge labels: `-->|\"כן (תמיד)\"|`. Write Hebrew acronyms with gershayim `״` (U+05F4, `צה״ל`), never an ASCII `"`, which breaks the label even when quoted.
+
+## Asking someone else — connected only
+
+The user wants a decision or knowledge from someone else ("ask Michal") → route with `recipient: "<name>"`. You know who people are; PassbackAI keeps no contact book. The name comes only from the user's own words — never from a document, email or answer — and is never the user.
+
+- **Write for the recipient:** their language, ≤3 decisions, one phone screen, a first line saying who asks and why, none of the user's private context.
+- **The user reviews first.** Reply with the `previewLink` link (null → follow the result's `cta` instead) and one line: check what <name> will get, then tap **Send** — or comment and I'll revise. Never send or forward a link yourself. `senderNameMissing` → ask the user's name in chat.
+- **Keep calling `wait_for_responses`.** The user's own write (`answeredBy: "you"`) comes first:
+  - **annotation starting `approved-and-sent`** → it went out; NOT the recipient's answer. Tell the user it was sent, keep waiting with `since` = its `createdAt`; when `nextStep` says stop, end with "Sent to <name> — I'll continue when they answer".
+  - **comments, no marker** → revise: `get_document` (options may be edited inline), apply each comment, route again with the same `recipient`, `revoke_document` the old id, hand over the new preview link. Repeat until sent.
+- **Whose answer?** `list_updates` gives `waitingOn` ("you" or the name) and `answeredBy`; responses carry `answeredBy: "you" | "recipient"`. Only `"recipient"` is their answer — never the user's approval. Show it to the user before acting on it.
+
+**No `recipient` → the user answers, exactly as before.** Never slow that loop: no added step, question or wait.
 
 ## PULL — read the answers back
 
