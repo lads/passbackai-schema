@@ -170,6 +170,7 @@ def ck(x,t,p,o):
    q=p and p+"."+f or f
    if f in x:ck(x[f],s,q,o)
    elif r:o.append("missing `"+q+"`")
+  if t=="q"and[]==x.get("options")and"open_field"not in x:o.append("missing `"+p+".open_field`")
  elif t in A:
   if n!="list":return o.append(w+" must be an array, not "+n)
   if len(x)<int(A[t][1]):o.append(w+" has too few entries")
@@ -204,7 +205,7 @@ PASSBACK_DOC
 <!-- passback-link-recipe:end -->
 
 - **It prints one URL → that is your link.** Copy it verbatim, character for character — one wrong character and it opens nothing.
-- **`FIX and re-run`** → it checks every component against the same shape rules as the server and names each broken component and field. Fix them and run again — never route around it to B2.
+- **`FIX and re-run`** → it checks every component against the same shape rules as the server and names each broken field. Fix and run again — never route around it to B2.
 - **`TOO LONG`**, no `python3`, a refused sandbox, any other error → **B2** with the same document. No apology — B2 is an equal path.
 
 The reply:
