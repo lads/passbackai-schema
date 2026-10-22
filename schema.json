@@ -12,7 +12,10 @@
     { "$ref": "#/$defs/allocate" },
     { "$ref": "#/$defs/questionnaire" },
     { "$ref": "#/$defs/youtube" },
-    { "$ref": "#/$defs/mermaid" }
+    { "$ref": "#/$defs/mermaid" },
+    { "$ref": "#/$defs/action" },
+    { "$ref": "#/$defs/cards" },
+    { "$ref": "#/$defs/schedule" }
   ],
   "$defs": {
     "routing": {
@@ -236,6 +239,223 @@
         "weight": { "type": "number", "minimum": 0, "description": "The category's share of `total`." },
         "context": { "type": "string" }
       }
+    },
+    "action": {
+      "type": "object",
+      "title": "Action (verb: go)",
+      "description": "One-tap buttons that hand work back to YOU. A press is sent at once as its own partial response (a waiting wait_for_responses returns within seconds; no Pass back needed), with a 10 s undo that sends a retraction. Use for \"approve this step / prepare it / not now\", never to ask a question. Each press arrives as `actionEvents` {blockId, actionId, label, note?, at, retracted?} plus a net `actionState`. Routed documents only send immediately; on a pasted or `#s=` document the press is copied back as \"Action: <label>\".",
+      "required": ["version", "actions"],
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "description": "Optional stable id; defaults to the block's document position." },
+        "title": { "type": "string", "maxLength": 200 },
+        "context": { "type": "string" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "description": "1–6 buttons. `id` must be unique across the array (a duplicate rejects the whole block).",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Stable and unique; this is what comes back as actionId." },
+              "label": { "type": "string", "minLength": 1, "maxLength": 120, "description": "Button text, e.g. \"Let's do it\"." },
+              "style": { "enum": ["primary", "default", "danger"], "description": "Default \"default\"; one primary at most." },
+              "requires_note": { "type": "boolean", "description": "Ask for a one-line note before sending." }
+            }
+          }
+        },
+        "allow_multiple": { "type": "boolean", "description": "Default false: a second press replaces the first (the history keeps both)." }
+      },
+      "examples": [
+        { "version": "1", "title": "Ship the 7 ready PRs?", "actions": [{ "id": "go", "label": "Let's do it", "style": "primary" }, { "id": "prep", "label": "Prepare it" }, { "id": "later", "label": "Not now" }] }
+      ]
+    },
+    "cards": {
+      "type": "object",
+      "title": "Cards (verb: scan)",
+      "description": "Compact cards a reader skims in ~30 s: title, ONE short context line, optional highlighted `metric` (\"7 PRs\") and `details` that expand on tap. The reader comments on a card like any passage; an optional per-card `action` is sent at once like an `action` block. Keep `context` under ~120 chars; the rest goes in `details`. `badge` marks what is new/changed.",
+      "required": ["version", "items"],
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "description": "Optional stable id; defaults to the block's document position." },
+        "title": { "type": "string", "maxLength": 200 },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "description": "1–12 cards; `id` unique.",
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "context"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "context": { "type": "string", "minLength": 1, "description": "ONE line, under ~120 chars." },
+              "metric": {
+                "type": "object",
+                "required": ["value"],
+                "properties": {
+                  "value": { "type": "string", "minLength": 1, "maxLength": 40, "description": "e.g. \"7 PRs\"." },
+                  "label": { "type": "string", "maxLength": 80 },
+                  "tone": { "enum": ["neutral", "good", "warn", "bad"], "description": "Default neutral." }
+                }
+              },
+              "details": { "type": "string", "description": "Inline-Markdown paragraphs, blank-line separated." },
+              "badge": { "enum": ["new", "changed"] },
+              "action": {
+                "type": "object",
+                "required": ["actions"],
+                "description": "Same fields as the `action` block's actions[]/allow_multiple.",
+                "properties": {
+                  "actions": { "type": "array", "minItems": 1, "maxItems": 6, "items": { "type": "object", "required": ["id", "label"], "properties": { "id": { "type": "string", "minLength": 1, "maxLength": 64 }, "label": { "type": "string", "minLength": 1, "maxLength": 120 }, "style": { "enum": ["primary", "default", "danger"] }, "requires_note": { "type": "boolean" } } } },
+                  "allow_multiple": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        { "version": "1", "title": "Today", "items": [{ "id": "prs", "title": "Pull requests", "context": "All CI-green; each needs only your visual approval.", "metric": { "value": "7 PRs", "tone": "good" }, "badge": "new", "action": { "actions": [{ "id": "go", "label": "Let's do it", "style": "primary" }] } }] }
+      ]
+    },
+    "schedule": {
+      "type": "object",
+      "title": "Schedule (verb: triage)",
+      "description": "A day as time blocks the reader triages one by one: per block a one-tap tag (default: not relevant / prep me / comment), sent at once like an `action` press. Times render in `timezone`, in time order; overlaps and free gaps show. Use for a day plan, never for prose.",
+      "required": [
+        "version",
+        "timezone",
+        "items"
+      ],
+      "properties": {
+        "version": {
+          "const": "1",
+          "description": "Always the string \"1\" — the number 1 is rejected."
+        },
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "YYYY-MM-DD the HH:MM times fall on."
+        },
+        "timezone": {
+          "type": "string",
+          "minLength": 1,
+          "description": "IANA zone, e.g. \"Asia/Jerusalem\"."
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "description": "1–24 blocks; `id` unique.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "start",
+              "title"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "start": {
+                "type": "string",
+                "pattern": "^(([01]\\d|2[0-3]):[0-5]\\d|\\d{4}-\\d{2}-\\d{2}T([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2}))$",
+                "description": "\"HH:MM\" in `timezone`, or ISO 8601 with an offset."
+              },
+              "end": {
+                "type": "string",
+                "pattern": "^(([01]\\d|2[0-3]):[0-5]\\d|\\d{4}-\\d{2}-\\d{2}T([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2}))$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "agenda": {
+                "type": "string",
+                "description": "One line."
+              },
+              "location": {
+                "type": "string"
+              },
+              "link": {
+                "type": "string",
+                "pattern": "^https?://\\S+$"
+              }
+            }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "description": "Optional tags replacing the defaults; the `action` block's actions[] shape.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "style": {
+                "enum": [
+                  "primary",
+                  "default",
+                  "danger"
+                ]
+              },
+              "requires_note": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "examples": [
+        {
+          "version": "1",
+          "date": "2026-10-22",
+          "timezone": "Asia/Jerusalem",
+          "items": [
+            {
+              "id": "standup",
+              "start": "09:30",
+              "end": "09:45",
+              "title": "Daily standup"
+            },
+            {
+              "id": "review",
+              "start": "11:00",
+              "end": "12:00",
+              "title": "Design review",
+              "agenda": "Cards and schedule"
+            }
+          ]
+        }
+      ]
     },
     "youtube": {
       "type": "object",

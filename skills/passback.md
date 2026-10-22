@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.3"
+  version: "4.6"
   created: "05-05-2026"
-  updated: "2026-10-18"
+  updated: "2026-10-21"
   triggers: "a plan/summary/artifact you just wrote that asks the user 3+ open decisions; route this for review; get feedback on this draft; extract open questions; turn this into a questionnaire; what came back on the doc I sent; did anyone answer; ask <name> in PassbackAI; get someone else's decision or input; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
@@ -69,6 +69,9 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 | `questionnaire` | group | work through 3+ TIGHTLY related questions as one cluster |
 | `youtube` | watch | see a video the document references (display — no answer) |
 | `mermaid` | watch | see a structure the decision depends on (display — no answer) |
+| `action` | go | hand you a step to DO now (```` ```action ````): one tap, sent at once, 10 s undo — not a question |
+| `cards` | scan | skim 2–12 cards (```` ```cards ````): title, one short line, metric, tap-to-expand details |
+| `schedule` | triage | tag a day's time blocks one by one (```` ```schedule ````), each tag sent at once |
 
 **The weave law is two-sided — the one rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget; density is what makes a document feel like a form. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**, not "fits a shape". An order you'd confidently recommend is settled too: a numbered prose list, not `prioritize`. No catch-all "anything else?" closer: it comes back blank. A two-way "ranking" is a `single-choice`; don't invent filler options to force a choice on an open point; don't split one real cluster into lonely blocks, and don't lump unrelated questions into a `questionnaire`. Display blocks sit outside the law: a referenced video is embedded as a `youtube` block (never a Markdown image link or an `img.youtube.com` URL — that host is blocked and renders broken), whether or not anything about it is open.
 
@@ -155,13 +158,17 @@ D={"single-choice":"id question!:S options!:L context recommended open_field:O"+
 "allocate":"items!:J total:n unit title instruction note_field:N"+G,
 "questionnaire":"questions!:Q title source_summary"+G,
 "youtube":"id!:Y title:T thumbnail","mermaid":"source!:M title:T",
+"action":"id title:T context actions!:K allow_multiple:b","cards":"id title:T items!:C","schedule":"id title:T date:D timezone!:V items!:B actions:K",
 "R":"from!:S return_prompt!","O":"label!:S placeholder","N":"enabled:b label",
 "q":"id!:S question!:S options!:a context section multi:b recommended:r open_field:O allow_note:b",
-"i":"id!:S label!:S context","j":"id!:S label!:S weight!:n context"}
+"k":"id!:S label!:S style:W requires_note:b","c":"id!:S title!:S context!:S metric:E details badge:G action:X","z":"id!:S start!:P end:P title!:S agenda location link:U","E":"value!:S label tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","j":"id!:S label!:S weight!:n context"}
 F={k:{f.strip("!"):(t or"s",f[-1]=="!")for f,_,t in(x.partition(":")for x in v.split())}for k,v in D.items()}
 U={f for v in F.values()for f in v}
-A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1")
+A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1",C="c1",B="z1")
 N=lambda x:type(x).__name__
+def TZ(x):
+ try:import zoneinfo;zoneinfo.ZoneInfo(x);return x!=""
+ except Exception:return 0
 def ck(x,t,p,o):
  w,n=p and"`"+p+"`"or"the body",N(x)
  if t in F:
@@ -176,15 +183,22 @@ def ck(x,t,p,o):
   if len(x)<int(A[t][1]):o.append(w+" has too few entries")
   for k,e in enumerate(x):ck(e,A[t][0],p+"[%d]"%k,o)
   z=[str(e.get("id"))for e in x if N(e)=="dict"]
-  if t in"IJ"and len(set(z))<len(z):o.append("duplicate `items[].id`")
+  if t in"IJKCB"and len(set(z))<len(z):o.append("duplicate `"+p+"[].id`")
  elif t=="r":
   if n!="str"and(n!="list"or{N(e)for e in x}-{"str"}):o.append(w+" must be a string or an array of strings")
  elif n not in{"n":"int float","b":"bool"}.get(t,"str").split():o.append(w+" has the wrong type: "+n)
  elif t in"SMY"and not x:o.append(w+" must not be empty")
  elif t=="Y"and not re.fullmatch(r"[\w-]{11}",x,re.A):o.append(w+" must be the bare 11-char video id")
  elif t in"TM"and len(x)>{"T":200,"M":8000}[t]:o.append(w+" is too long")
+ elif t=="W"and x not in("primary","default","danger"):o.append(w+" must be primary, default or danger")
+ elif t=="H"and x not in("neutral","good","warn","bad"):o.append(w+" must be neutral, good, warn or bad")
+ elif t=="G"and x not in("new","changed"):o.append(w+" must be new or changed")
+ elif t=="P"and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d|\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d+)?)?(Z|[+-]\d{2}:\d{2})",x):o.append(w+" must be HH:MM or ISO 8601 with an offset")
+ elif t=="D"and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",x):o.append(w+" must be YYYY-MM-DD")
+ elif t=="U"and not re.fullmatch(r"https?://\S+",x):o.append(w+" must be an http(s) URL")
+ elif t=="V"and not TZ(x):o.append(w+" must be an IANA time zone")
 B=[]
-for i,(t,b)in enumerate(re.findall(r"^```("+"|".join(list(D)[:8])+r")[ \t]*\n(.*?)\n```[ \t]*$",d,re.S|re.M),1):
+for i,(t,b)in enumerate(re.findall(r"^```("+"|".join(list(D)[:11])+r")[ \t]*\n(.*?)\n```[ \t]*$",d,re.S|re.M),1):
  o=[]
  try:x=json.loads(b)
  except ValueError as e:o=["not JSON ("+str(e)+")"]
@@ -273,6 +287,9 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 | `questionnaire` | `questions` [{`id`,`question`,`options`}] (`options: []` + `open_field` for free text) | per-question `multi` (a real boolean), `recommended`, `section` | a question missing `id` or `options`; `"multi": "true"` as a string |
 | `youtube` | `id` = the bare 11-char video id | `title` | a full URL, `youtu.be` link or query string in `id` |
 | `mermaid` | `source` (Mermaid text inside the JSON string) | `title` | a raw Mermaid body instead of JSON |
+| `action` | `actions` [{`id`,`label`}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | empty `actions`; duplicate action `id`s |
+| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value`,`tone`}, `details`, `badge`, `action` | duplicate `id`s; `context` over ~120 chars |
+| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}] — `start` `HH:MM` or ISO with offset | `date`, `end`, `agenda`, `location`, `link`, `actions` | a made-up zone; `9:30` (needs two digits) |
 
 `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum across several choice blocks carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean; it must match an option label exactly. Don't put "Other" in `options` — the renderer adds a localized Other row. **Cosmetic, still renders:** a `recommended` label that doesn't match exactly (the badge silently drops), smart quotes or a trailing comma (the human-paste parser recovers them — not a licence to be sloppy).
 
@@ -311,7 +328,7 @@ if not m:sys.exit("NO #s= LINK -- ask for the link they copied")
 raw=base64.urlsafe_b64decode(m.group(1)+"="*(-len(m.group(1))%4))
 if raw[:2]!=b"\x1f\x8b":sys.exit("PASSWORD-PROTECTED -- ask them to use Copy instead")
 s=json.loads(gzip.decompress(raw))
-P={"questionnaire": "q", "prioritize": "p", "allocate": "a", "single-choice": "sc", "multi-choice": "mc", "open-question": "oq"}
+P={"questionnaire": "q", "prioritize": "p", "allocate": "a", "single-choice": "sc", "multi-choice": "mc", "open-question": "oq", "action": "ac", "cards": "cd", "schedule": "sch"}
 n,out=Counter(),[]
 for t,b in re.findall(r"^```("+"|".join(P)+r")[ \t]*\n(.*?)\n```[ \t]*$",s.get("markdown",""),re.S|re.M):
  try:c=json.loads(b)

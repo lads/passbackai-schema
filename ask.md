@@ -10,7 +10,7 @@
 >
 > | You are… | Deliver via | What you do |
 > |---|---|---|
-> | **Connected over MCP** (the AI-native path, **preferred**) | the **`route_document` MCP tool** | call `route_document` with a typed `blocks[]` array — the server validates each component as you generate it, writes the canonical fences for you, and returns the creator's **private** preview link (`/d/<id>`); the creator mints the reviewer's share link (`/r/<id>`) from that page. No copy-paste, no smart-quote risk. |
+> | **Connected over MCP** (the AI-native path, **preferred**) | the **`route_document` MCP tool** | call `route_document` with a typed `blocks[]` array — the server validates each component as you generate it, writes the canonical fences for you, and returns the creator's **private** preview link (`/d/<id>`); the creator answers on that page themselves (it is also returned as `reviewerLink`, live at once), or mints a share link (`/r/<id>`) there for someone else. No copy-paste, no smart-quote risk. |
 > | **Not connected** (no MCP) | **paste** (the local fallback) | emit the Markdown document below and tell the user to paste it at **https://passbackai.com**. This is also the fallback when a route fails. |
 >
 > Both faces describe the **same components with the same JSON fields** — only the delivery differs. The
@@ -79,7 +79,7 @@ added later — must agree with this file.**
 | **Spec status** | Canonical. Authoritative over any skill README, prompt, or tribal note. |
 | **Wire `version`** | `"1"` for **every** component block. The only value any validator accepts (a number `1` is rejected). It has never moved; new capabilities ship as additive optional fields, never a `version` bump. |
 | **Current `skill_version`** | `3.3` (`LATEST_SKILL_VERSION` in `src/data/skill-changelog.js`). Authoring-side build tag — see the version model below. |
-| **Spec revision** | `r20` · 2026-10-08 · **Confident order + catch-all closers** ([§2.2](#22-common-mistakes)): an order you can confidently recommend is settled → a numbered prose list, not ` ```prioritize ` (reserved for a genuinely open order); an ` ```open-question ` names one specific point, never a catch-all "anything else?" closer (`route_document` now hints on one). **GUIDANCE-ONLY** — nothing you author changes shape. r19 · 2026-10-07 · **Link contract** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback), [§10](#10-delivery-paths--mcp-route-vs-paste)): this spec now names the link `route_document` actually returns — the creator's **private** `/d/<id>` preview (opens for them alone), from which they mint the reviewer's `/r/<id>` share link — instead of calling it a reviewer link. **AUTHORING-UNCHANGED**; nothing you author moves. r18 · 2026-08-08 · **`wait_for_responses`** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback), [§10](#10-delivery-paths--mcp-route-vs-paste)): the read side of the MCP loop gains a WAITING face — `wait_for_responses` holds the tool call open until a reviewer answers and returns the same payload as `list_responses`, so a connected model stays in the loop instead of ending its turn and waiting to be re-prompted. An elapsed hold returns `status: "waiting"` (a normal result, not an error) and is re-called to keep waiting; both read tools now also carry a content-derived `nextStep` line in their RESULT. **AUTHORING-UNCHANGED** — no component, payload, or fence changes; nothing you author moves. r17 · 2026-07-17 · **Allocate list edits** ([§4.5](#45-component-allocate--split), [§4.5.3](#453-answers-output)): the reviewer can now **delete a category** from a ` ```allocate ` split (reversible; its weight redistributes proportionally among the rest so the sum stays `total`; reported back as an explicit `Removed by reader:` line) and **add categories of their own**, entering at weight 0 inside the **same** split (reported back marked `— (added by reader)`); the header tag gains `reader edited the list`. Still **AUTHORING-UNCHANGED** — the payload stays {version, items[, total, unit, title, instruction, note_field, routing]}; list edits are a review-side answer (leaf-free, keyed by item ids, so leaf numbering is untouched). Additive; nothing you author changes. r16 · 2026-07-17 · **Prioritize list edits** ([§4](#4-component-prioritize--order), [§4.3](#43-answers-output)): the reviewer can now **delete an item** from a ` ```prioritize ` list (reversible; reported back as an explicit `Removed by reader:` line) and **add items of their own**, ranked inside the **same** list (reported back marked `— (added by reader)`); the header tag gains `reader edited the list`. Still **AUTHORING-UNCHANGED** — the payload stays {version, items[, title, instruction, note_field, routing]}; list edits are a review-side answer (leaf-free, keyed by item ids, so leaf numbering is untouched). Additive; nothing you author changes. r15 · 2026-07-16 · **Diagram authoring guidance** ([§2.2](#22-common-mistakes), [§4.7](#47-component-mermaid--watch)): teaches WHEN/HOW an authoring model should reach for a ` ```mermaid ` diagram — the **reach trigger** (you're describing a STRUCTURE the reader must hold in their head: a process / flow / mechanism / sequence / state machine / decision tree / architecture / dependency order / timeline), the **comparison PAIR** (two diagrams side by side — before→after, A vs B — the highest-value move when a doc weighs a change), **restraint** (a diagram earns its place only when the structure is genuinely hard to hold in prose; three linear steps stay prose), and the **payoff** (the reviewer comments on the exact node/edge, per [§4.7.3](#473-answers-output)). A diagram is a **comprehension** aid, a different axis from the one-primitive-per-open-decision weave law. **GUIDANCE-ONLY** — the authoring payload is UNCHANGED (still `source`-only, {version, source, title}); nothing you author changes. r14 · 2026-07-16 · **Mermaid edge + whole-diagram comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now also anchor a comment to a specific **flowchart EDGE (line + its label)** and to the **WHOLE diagram**, in addition to a node. Still **AUTHORING-UNCHANGED** — `source`-only ({version, source, title}); edge/whole-diagram commenting is a review-side answer (edges keyed by the edge's source-derived endpoints, whole-diagram keyed to nothing; LEAF-FREE, so leaf numbering is untouched). Additive; nothing you author changes. r13 · 2026-07-15 · **Mermaid node comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now anchor a comment to a specific **flowchart NODE (box)** of a rendered ` ```mermaid ` diagram, not only the caption. The **AUTHORING payload is UNCHANGED** — still `source`-only ({version, source, title}); node commenting is a review-side answer keyed by the node id already in your `source` (LEAF-FREE, so leaf numbering is untouched). Only flowchart/graph diagrams expose per-node commenting; other types are commented on like prose. Additive; nothing you author changes. r12 · 2026-07-15 · **Mermaid** ([§4.7](#47-component-mermaid--watch)): a ` ```mermaid ` **embed rich media** component — verb **watch** — a diagram (flowchart/sequence/ER/…) rendered **client-side on every surface** (paste, `#s=`, routed alike) from a `source`-only payload — the diagram is drawn by an on-demand, off-budget renderer under the unchanged strict CSP, and the produced SVG is sanitized before display. Additive; nothing existing changed. r11 · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
+| **Spec revision** | `r24` · 2026-10-22 · **Schedule** ([§4.10](#410-component-schedule--triage)): a new ` ```schedule ` component — verb **triage** — a day plan whose blocks the reader tags one by one, each tag a one-tap action. Additive; nothing existing changed. `r23` · 2026-10-21 · **Cards** ([§4.9](#49-component-cards--scan)): a new ` ```cards ` component — verb **scan** — compact cards for a skimmable brief (title, one context line, an optional highlighted metric, details that expand, an optional per-card one-tap `action`). Additive; nothing existing changed. `r22` · 2026-10-21 · **Action** ([§4.8](#48-component-action--go)): a new ` ```action ` component — verb **go** — one-tap buttons ("Let's do it" / "Prepare it" / "Not now") that hand work back to the agent. On a routed document a press is stored at once as its own partial response, so a waiting `wait_for_responses` returns within seconds with no Pass back; a 10 s undo sends a retraction. Additive; nothing existing changed. `r21` · 2026-10-21 · **`reviewerLink`** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback), [§10](#10-delivery-paths--mcp-route-vs-paste)): `route_document` now also returns `reviewerLink` + `reviewerLinkStatus: "live"` — the creator's own answering page, usable at once with no minting. **AUTHORING-UNCHANGED**; nothing you author moves. `r20` · 2026-10-08 · **Confident order + catch-all closers** ([§2.2](#22-common-mistakes)): an order you can confidently recommend is settled → a numbered prose list, not ` ```prioritize ` (reserved for a genuinely open order); an ` ```open-question ` names one specific point, never a catch-all "anything else?" closer (`route_document` now hints on one). **GUIDANCE-ONLY** — nothing you author changes shape. r19 · 2026-10-07 · **Link contract** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback), [§10](#10-delivery-paths--mcp-route-vs-paste)): this spec now names the link `route_document` actually returns — the creator's **private** `/d/<id>` preview (opens for them alone), from which they mint the reviewer's `/r/<id>` share link — instead of calling it a reviewer link. **AUTHORING-UNCHANGED**; nothing you author moves. r18 · 2026-08-08 · **`wait_for_responses`** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback), [§10](#10-delivery-paths--mcp-route-vs-paste)): the read side of the MCP loop gains a WAITING face — `wait_for_responses` holds the tool call open until a reviewer answers and returns the same payload as `list_responses`, so a connected model stays in the loop instead of ending its turn and waiting to be re-prompted. An elapsed hold returns `status: "waiting"` (a normal result, not an error) and is re-called to keep waiting; both read tools now also carry a content-derived `nextStep` line in their RESULT. **AUTHORING-UNCHANGED** — no component, payload, or fence changes; nothing you author moves. r17 · 2026-07-17 · **Allocate list edits** ([§4.5](#45-component-allocate--split), [§4.5.3](#453-answers-output)): the reviewer can now **delete a category** from a ` ```allocate ` split (reversible; its weight redistributes proportionally among the rest so the sum stays `total`; reported back as an explicit `Removed by reader:` line) and **add categories of their own**, entering at weight 0 inside the **same** split (reported back marked `— (added by reader)`); the header tag gains `reader edited the list`. Still **AUTHORING-UNCHANGED** — the payload stays {version, items[, total, unit, title, instruction, note_field, routing]}; list edits are a review-side answer (leaf-free, keyed by item ids, so leaf numbering is untouched). Additive; nothing you author changes. r16 · 2026-07-17 · **Prioritize list edits** ([§4](#4-component-prioritize--order), [§4.3](#43-answers-output)): the reviewer can now **delete an item** from a ` ```prioritize ` list (reversible; reported back as an explicit `Removed by reader:` line) and **add items of their own**, ranked inside the **same** list (reported back marked `— (added by reader)`); the header tag gains `reader edited the list`. Still **AUTHORING-UNCHANGED** — the payload stays {version, items[, title, instruction, note_field, routing]}; list edits are a review-side answer (leaf-free, keyed by item ids, so leaf numbering is untouched). Additive; nothing you author changes. r15 · 2026-07-16 · **Diagram authoring guidance** ([§2.2](#22-common-mistakes), [§4.7](#47-component-mermaid--watch)): teaches WHEN/HOW an authoring model should reach for a ` ```mermaid ` diagram — the **reach trigger** (you're describing a STRUCTURE the reader must hold in their head: a process / flow / mechanism / sequence / state machine / decision tree / architecture / dependency order / timeline), the **comparison PAIR** (two diagrams side by side — before→after, A vs B — the highest-value move when a doc weighs a change), **restraint** (a diagram earns its place only when the structure is genuinely hard to hold in prose; three linear steps stay prose), and the **payoff** (the reviewer comments on the exact node/edge, per [§4.7.3](#473-answers-output)). A diagram is a **comprehension** aid, a different axis from the one-primitive-per-open-decision weave law. **GUIDANCE-ONLY** — the authoring payload is UNCHANGED (still `source`-only, {version, source, title}); nothing you author changes. r14 · 2026-07-16 · **Mermaid edge + whole-diagram comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now also anchor a comment to a specific **flowchart EDGE (line + its label)** and to the **WHOLE diagram**, in addition to a node. Still **AUTHORING-UNCHANGED** — `source`-only ({version, source, title}); edge/whole-diagram commenting is a review-side answer (edges keyed by the edge's source-derived endpoints, whole-diagram keyed to nothing; LEAF-FREE, so leaf numbering is untouched). Additive; nothing you author changes. r13 · 2026-07-15 · **Mermaid node comments** ([§4.7](#47-component-mermaid--watch), [§4.7.3](#473-answers-output)): a reviewer can now anchor a comment to a specific **flowchart NODE (box)** of a rendered ` ```mermaid ` diagram, not only the caption. The **AUTHORING payload is UNCHANGED** — still `source`-only ({version, source, title}); node commenting is a review-side answer keyed by the node id already in your `source` (LEAF-FREE, so leaf numbering is untouched). Only flowchart/graph diagrams expose per-node commenting; other types are commented on like prose. Additive; nothing you author changes. r12 · 2026-07-15 · **Mermaid** ([§4.7](#47-component-mermaid--watch)): a ` ```mermaid ` **embed rich media** component — verb **watch** — a diagram (flowchart/sequence/ER/…) rendered **client-side on every surface** (paste, `#s=`, routed alike) from a `source`-only payload — the diagram is drawn by an on-demand, off-budget renderer under the unchanged strict CSP, and the produced SVG is sanitized before display. Additive; nothing existing changed. r11 · 2026-07-14 · **YouTube** ([§4.6](#46-component-youtube--watch)): the first **embed rich media** component — verb **watch** — a ` ```youtube ` block that shows a video. DISPLAY-ONLY (no answer; the reviewer comments on it like prose) and **routed-only** (plays click-to-load on the routed reviewer surface via `route_document`; inert on locally-pasted / `#s=` documents, which never contact YouTube). Additive; nothing existing changed. r10 · 2026-07-12 · **the two-sided weave law + the admission gate** ([§2.2](#22-common-mistakes), [§7](#7-the-family-is-open--adding-a-component)): the settled-vs-open rule stated with a FLOOR (an open point always becomes a component; `open-question` is the floor, never a demotion to prose) as well as the ceiling (settled stays prose) — closing the under-use gap; plus the discriminator `allocate` (magnitude) vs `prioritize` (order), and the meta-gate for future components (a new primitive must name a decision-shape not yet covered, with an isomorphic gesture). Additive; nothing existing changed. r9 · 2026-07-12 · **Allocate** ([§4.5](#45-component-allocate--split)): a new ` ```allocate ` component — verb **split** — the magnitude sibling of `prioritize` (order → weight). The user drags weighted bars that always sum to `total` (100% by default) to split a fixed whole across categories; the resolved weights + deltas serialize back. Additive; nothing existing changed. r8 · 2026-07-02 · **the palette** ([§2](#2-component-index--the-palette)): three standalone question primitives — ` ```single-choice ` (choose one), ` ```multi-choice ` (choose many), ` ```open-question ` (write) — join `prioritize` (order) and `questionnaire`, which is REFRAMED as the **group** primitive (a batch of 3+ tightly-related questions), no longer the default vessel for every ambiguity. Pick ONE primitive per unclear point and weave it into prose; prose itself is a response channel. All three new shapes are additive; nothing existing changed. r7 · 2026-06-26 · added the **MCP delivery path** ([§0.5](#05-delivery--mcp-route-primary-paste-fallback)/[§10](#10-delivery-paths--mcp-route-vs-paste)): when connected over MCP, deliver via the `route_document` tool with a typed `blocks[]` array (server-validated, server-serialized fences, returns a reviewer link) — paste is now the **local fallback**, not the only loop. Corrected the former "there is no API" claim. <!-- authoring-faces:allow — this revision note must quote the corrected phrase --> r6: hardened the **fence contract** ([§2.1](#21-not-block-types--do-not-invent-fence-tags)/[§2.2](#22-common-mistakes)). r5: served at `/ask.md` + mirrored to a public repo; added `/schema.json`. r4: `/ask` reframed to the full family. r3: named the public link; documented `recommended`. |
 
 ### Governance — why this exists, and the one rule that keeps it true
 
@@ -148,8 +148,10 @@ instead of writing a fence. Then:
   validates the shape at generation time — so **there is no smart-quote risk on this path** (the entire
   smart-quote concern in §1/§3 is a **paste-path-only** hazard; it cannot occur here).
 - **You get the creator's private preview link back.** `route_document` returns `previewLink` (`/d/<id>`), which
-  opens for the signed-in creator alone. Hand THAT to the creator; pressing **Create share link** on it mints the
-  separate reviewer link (`/r/<id>`) — never tell them to forward the `/d/` link. The routed doc adopts into the
+  opens for the signed-in creator alone and is ALSO returned as `reviewerLink` (`reviewerLinkStatus: "live"`): the
+  creator answers right there and presses Pass back — `wait_for_responses` returns the answers, no paste, nothing to
+  mint. Only if someone ELSE must answer does the creator press **Create share link** on it to mint the separate
+  reviewer link (`/r/<id>`) — never forward the `/d/` link, and never invent an `/r/` link (an unminted one is dead). The routed doc adopts into the
   recipient's collection exactly like a `#s=` share link.
 - **`markdown` is the prose-only shortcut.** For a document with **no** component you may pass a single
   `markdown` string instead of `blocks`. **`blocks` takes precedence** if both are given, and a component
@@ -186,7 +188,7 @@ AI-native route isn't available.
 
 1. **You call `route_document`** with a typed `blocks[]` array (prose + component blocks, §0.5). The server
    validates each component, writes the canonical fences, and returns the creator's private `/d/<id>` preview link.
-2. **The creator previews it and mints the `/r/<id>` share link if someone else reviews; the reviewer fills it in** in the same rendered app.
+2. **The creator reviews it on the returned link (`reviewerLink`, live at once), or mints the `/r/<id>` share link if someone else reviews; the reviewer fills it in** in the same rendered app.
 3. **You call `wait_for_responses`** (or `list_responses` to check without waiting) to pull their answers
    back (`annotations[]` + `componentInputs[]`) — a pull, no copy-paste, no webhook. Both results carry a
    `nextStep` line describing what to do with that particular batch.
@@ -294,6 +296,9 @@ server-side.)
 | [§3](#3-component-questionnaire--choose) | **Questionnaire** | ` ```questionnaire ` | **group** — a batch of 3+ tightly-related questions presented as one unit |
 | [§4.6](#46-component-youtube--watch) | **YouTube** | ` ```youtube ` | **watch** — show a video (display-only, no answer; routed reviewer surface only) |
 | [§4.7](#47-component-mermaid--watch) | **Mermaid** | ` ```mermaid ` | **watch** — show a diagram (rendered client-side on every surface; the reviewer can comment on a flowchart node, edge, or the whole diagram) |
+| [§4.8](#48-component-action--go) | **Action** | ` ```action ` | **go** — one-tap buttons that hand work back to you; a press is sent at once as its own partial response (routed docs), no Pass back |
+| [§4.9](#49-component-cards--scan) | **Cards** | ` ```cards ` | **scan** — compact cards (title, one context line, a highlighted metric, tap-to-expand details, an optional one-tap action each) a reader skims in ~30 s |
+| [§4.10](#410-component-schedule--triage) | **Schedule** | ` ```schedule ` | **triage** — a day as time blocks in one time zone; the reader tags each block (not relevant / prep me / comment), each tag sent at once on a routed doc |
 
 **Prose is itself a response channel.** Settled thinking stays prose — the reviewer annotates it directly.
 Weave the primitives INTO the prose, each one set up by the sentence before it; don't stack them into a form.
@@ -1034,6 +1039,134 @@ The proposed shape is simpler but makes the gateway a single point of trust. Shi
 The reviewer can now comment on the **`signed header` edge** in the *Proposed* diagram ("what signs it —
 short-lived key? rotation?") — a question that was invisible in the prose, and a decision they express
 in the single choice below the pair.
+
+---
+
+## 4.8 COMPONENT: Action — *go*
+
+**Decision-shape it covers:** *delegate / authorize* — "do this now". Not a question and not a choice
+between options to compare: the reviewer is telling the agent to GO. No other primitive covers it
+(`single-choice` records a pick that is only read after Pass back; `prioritize` orders; none moves work
+forward on its own). **Gesture:** one tap on a button. Pressing it IS the answer — there is no
+"select, then submit".
+
+Use it for approving or deferring a concrete step ("Ship the 7 ready PRs?" → *Let's do it* / *Prepare it*
+/ *Not now*). Never use it for a question the reviewer must think about; that stays a choice or an
+open question.
+
+### 4.8.1 Schema
+
+```action
+{ "version": "1", "title": "Ship the 7 ready PRs?",
+  "actions": [
+    { "id": "go", "label": "Let's do it", "style": "primary" },
+    { "id": "prep", "label": "Prepare it" },
+    { "id": "later", "label": "Not now" } ] }
+```
+
+| Field | Rules |
+|---|---|
+| `version` | the string `"1"` |
+| `actions` | **required**, 1–6 items `{ id, label, style?, requires_note? }`; `id` unique across the array (a duplicate, or an empty `actions`, is refused by `route_document` with a clear error); `style` is `primary` \| `default` \| `danger` |
+| `requires_note` | `true` asks for a one-line note before the press is sent |
+| `allow_multiple` | default `false`: a second press replaces the first (the history keeps both) |
+| `id`, `title`, `context` | optional; `title` and `context` are anchorable prompt lines for comments |
+
+### 4.8.2 Behaviour per surface
+
+- **Routed document (`/r/` or the creator's `/d/`):** a press is sent *immediately* as its own small
+  response (no Pass back). It shows "Sent to the agent ✓" with an undo for 10 s; undo sends a
+  retraction event. There is no confirm dialog. The final Pass back does not repeat action answers.
+- **Pasted or `#s=` document:** nothing can be sent, so the press is recorded locally and copied back
+  as `Action: <label>` in the answers bundle.
+- Layout is direction-aware: Hebrew labels render RTL, the primary button on the reading-start side;
+  buttons are at least 44 px tall.
+
+### 4.8.3 Answers output
+
+Over MCP each press arrives in `list_responses` / `wait_for_responses` as `actionEvents`:
+`{ blockId, actionId, label, note?, at, retracted? }` (a retraction repeats the same `blockId` +
+`actionId` with `retracted: true`), a net `actionState` (retractions applied; `undoableUntil` while the
+undo window is open) and `partial: true` when the response holds nothing but action events. A press by
+someone other than the creator (`answeredBy: "recipient"`) is a suggestion, not authorization.
+
+---
+
+## 4.9 COMPONENT: Cards — *scan*
+
+**Decision-shape it covers:** *per-item review of a brief the reader skims* — "7 PRs, all CI-green, each
+needs only your visual approval". Prose is too slow to scan on a phone, `multi-choice` has no per-item
+context or hierarchy, and a list of `single-choice` blocks is a form. **Gesture:** scan, then (optionally)
+tap — the reader comments on a card like any passage, or presses the card's own button. Cards are a
+**display** block; they ask nothing by themselves.
+
+### 4.9.1 Schema
+
+```cards
+{ "version": "1", "title": "Today",
+  "items": [
+    { "id": "prs", "title": "Pull requests", "context": "All CI-green; each needs only your visual approval.",
+      "metric": { "value": "7 PRs", "tone": "good" }, "badge": "new",
+      "details": "Two touch the parser.\n\nThe rest are copy changes.",
+      "action": { "actions": [ { "id": "go", "label": "Let's do it", "style": "primary" } ] } } ] }
+```
+
+| Field | Rules |
+|---|---|
+| `items` | **required**, 1–12 cards; `id` unique (a duplicate is refused by `route_document`) |
+| `title`, `context` | **required** per card. `context` is ONE line — over ~120 characters `route_document` hints you to move the rest into `details` |
+| `metric` | optional `{ value, label?, tone? }`; `value` ≤ 40 chars (e.g. `"7 PRs"`); `tone` is `neutral` \| `good` \| `warn` \| `bad` and is never colour alone (a glyph and screen-reader text ride along). It is the most prominent element of the card |
+| `details` | optional inline-Markdown paragraphs separated by a blank line (no block constructs); collapsed by default, expands inline |
+| `badge` | `new` \| `changed` — so an update shows only what changed |
+| `action` | optional `{ actions[], allow_multiple? }`, same fields as [§4.8](#48-component-action--go): a press is sent at once on a routed document, exactly like an `action` block |
+
+### 4.9.2 Behaviour per surface and answers
+
+- **Routed document:** a card's press is sent at once as its own partial response; it comes back as
+  `actionEvents` with the card's `itemId` (see [§4.8.3](#483-answers-output)). The final Pass back does not
+  repeat it.
+- **Pasted or `#s=` document:** presses are copied back as `- <card>: Action: <label>`.
+- **Comments:** a reader's comments are ordinary annotations anchored to a card's title, context or detail
+  paragraphs (every one of those texts is anchorable, expanded or not), so the response carries the quoted
+  card text.
+- RTL-first: logical layout, Hebrew text with an English/number metric stays intact (`7 PRs` never
+  reorders); every control is at least 44 px; the details toggle is a button with `aria-expanded`.
+
+---
+
+## 4.10 COMPONENT: Schedule — *triage*
+
+**Decision-shape it covers:** *per-item triage along time* — "which of today's meetings matter, and which
+should you be prepped for". `multi-choice` has no time axis; `mermaid` only displays; `cards` has no clock,
+overlaps or free time. **Gesture:** scan the day, open a block, tap a tag.
+
+### 4.10.1 Schema
+
+```schedule
+{ "version": "1", "title": "יום רביעי", "date": "2026-10-22", "timezone": "Asia/Jerusalem",
+  "items": [
+    { "id": "standup", "start": "09:30", "end": "09:45", "title": "Daily standup" },
+    { "id": "review", "start": "11:00", "end": "12:00", "title": "Design review", "agenda": "Cards and schedule",
+      "location": "Room 3", "link": "https://example.com/meet" } ] }
+```
+
+| Field | Rules |
+|---|---|
+| `timezone` | **required**, an IANA zone (`Asia/Jerusalem`). A made-up zone is refused by `route_document`. Every time renders in it, and it is named under the title |
+| `items` | **required**, 1–24 blocks `{ id, start, title, end?, agenda?, location?, link? }`, `id` unique. `start`/`end` are `HH:MM` in `timezone` (on `date`) or ISO 8601 with an offset. `link` must be http(s) |
+| `actions` | optional tags replacing the defaults (*not relevant* / *prep me* / *comment*, the comment asking for a one-line note); the `action` block's `actions[]` shape. Several tags may stand on one block |
+| `date`, `title` | optional; with `date` set to today (in `timezone`) a "now" marker shows |
+
+Blocks render in time order, one question-style card each: the title is the prompt, the agenda its context
+line, the time range sits in the card's corner. A gap over an hour shows as a quiet "free" line; an
+overlapping block is marked.
+
+### 4.10.2 Behaviour and answers
+
+- **Routed document:** a tag is sent at once as its own partial response (like an `action` press), with
+  undo; it comes back as `actionEvents` with the block's `itemId` (see [§4.8.3](#483-answers-output)), so a
+  "prep me" reaches the agent before the final Pass back, which does not repeat it.
+- **Pasted or `#s=` document:** each tagged block is copied back as `- HH:MM Title: tags — note`.
 
 ---
 
