@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.6"
+  version: "4.7"
   created: "05-05-2026"
   updated: "2026-10-21"
   triggers: "a plan/summary/artifact you just wrote that asks the user 3+ open decisions; route this for review; get feedback on this draft; extract open questions; turn this into a questionnaire; what came back on the doc I sent; did anyone answer; ask <name> in PassbackAI; get someone else's decision or input; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
@@ -158,13 +158,13 @@ D={"single-choice":"id question!:S options!:L context recommended open_field:O"+
 "allocate":"items!:J total:n unit title instruction note_field:N"+G,
 "questionnaire":"questions!:Q title source_summary"+G,
 "youtube":"id!:Y title:T thumbnail","mermaid":"source!:M title:T",
-"action":"id title:T context actions!:K allow_multiple:b","cards":"id title:T items!:C","schedule":"id title:T date:D timezone!:V items!:B actions:K",
+"action":"id title:T context actions!:K allow_multiple:b","cards":"id title:T items!:C","schedule":"id title:T date:D timezone!:V items!:B actions:Z",
 "R":"from!:S return_prompt!","O":"label!:S placeholder","N":"enabled:b label",
 "q":"id!:S question!:S options!:a context section multi:b recommended:r open_field:O allow_note:b",
-"k":"id!:S label!:S style:W requires_note:b","c":"id!:S title!:S context!:S metric:E details badge:G action:X","z":"id!:S start!:P end:P title!:S agenda location link:U","E":"value!:S label tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","j":"id!:S label!:S weight!:n context"}
+"k":"id!:S label!:S style:W requires_note:b","c":"id!:S title!:S context!:S metric:E details badge:G action:X expanded:b","z":"id!:S start!:P end:P title!:S agenda location link:U","E":"value!:S label tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","j":"id!:S label!:S weight!:n context"}
 F={k:{f.strip("!"):(t or"s",f[-1]=="!")for f,_,t in(x.partition(":")for x in v.split())}for k,v in D.items()}
 U={f for v in F.values()for f in v}
-A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1",C="c1",B="z1")
+A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1",C="c1",B="z1",Z="k0")
 N=lambda x:type(x).__name__
 def TZ(x):
  try:import zoneinfo;zoneinfo.ZoneInfo(x);return x!=""
@@ -183,7 +183,7 @@ def ck(x,t,p,o):
   if len(x)<int(A[t][1]):o.append(w+" has too few entries")
   for k,e in enumerate(x):ck(e,A[t][0],p+"[%d]"%k,o)
   z=[str(e.get("id"))for e in x if N(e)=="dict"]
-  if t in"IJKCB"and len(set(z))<len(z):o.append("duplicate `"+p+"[].id`")
+  if t in"IJKCBZ"and len(set(z))<len(z):o.append("duplicate `"+p+"[].id`")
  elif t=="r":
   if n!="str"and(n!="list"or{N(e)for e in x}-{"str"}):o.append(w+" must be a string or an array of strings")
  elif n not in{"n":"int float","b":"bool"}.get(t,"str").split():o.append(w+" has the wrong type: "+n)
@@ -288,8 +288,8 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 | `youtube` | `id` = the bare 11-char video id | `title` | a full URL, `youtu.be` link or query string in `id` |
 | `mermaid` | `source` (Mermaid text inside the JSON string) | `title` | a raw Mermaid body instead of JSON |
 | `action` | `actions` [{`id`,`label`}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | empty `actions`; duplicate action `id`s |
-| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value`,`tone`}, `details`, `badge`, `action` | duplicate `id`s; `context` over ~120 chars |
-| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}] — `start` `HH:MM` or ISO with offset | `date`, `end`, `agenda`, `location`, `link`, `actions` | a made-up zone; `9:30` (needs two digits) |
+| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value`,`tone`}, `details`, `expanded`, `badge`, `action` | duplicate `id`s; `context` over ~120 chars |
+| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}] — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link`, `actions` (`[]` = read-only agenda) | a made-up zone; `9:30` (needs two digits) |
 
 `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum across several choice blocks carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean; it must match an option label exactly. Don't put "Other" in `options` — the renderer adds a localized Other row. **Cosmetic, still renders:** a `recommended` label that doesn't match exactly (the badge silently drops), smart quotes or a trailing comma (the human-paste parser recovers them — not a licence to be sloppy).
 

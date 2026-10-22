@@ -303,6 +303,7 @@
                 }
               },
               "details": { "type": "string", "description": "Inline-Markdown paragraphs, blank-line separated." },
+              "expanded": { "type": "boolean", "description": "true = the card arrives open (else context, details and buttons sit behind its chevron)." },
               "badge": { "enum": ["new", "changed"] },
               "action": {
                 "type": "object",
@@ -400,9 +401,9 @@
         },
         "actions": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "maxItems": 6,
-          "description": "Optional tags replacing the defaults; the `action` block's actions[] shape.",
+          "description": "Optional tags replacing the defaults; the `action` block's actions[] shape; [] = read-only agenda.",
           "items": {
             "type": "object",
             "required": [
