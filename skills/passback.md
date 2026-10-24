@@ -8,7 +8,6 @@ metadata:
   version: "4.9"
   created: "05-05-2026"
   updated: "2026-10-23"
-  triggers: "a plan/summary/artifact you just wrote that asks the user 3+ open decisions; route this for review; get feedback on this draft; extract open questions; turn this into a questionnaire; what came back on the doc I sent; did anyone answer; ask <name> in PassbackAI; get someone else's decision or input; passbackai; the same intents in any language (e.g. Hebrew תוציא שאלות פתוחות)"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
