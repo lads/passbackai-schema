@@ -306,6 +306,17 @@
               "details": { "type": "string", "description": "Inline-Markdown paragraphs, blank-line separated." },
               "expanded": { "type": "boolean", "description": "true = the card arrives open (else context, details and buttons sit behind its chevron)." },
               "badge": { "enum": ["new", "changed"] },
+              "question": {
+                "type": "object",
+                "required": ["options"],
+                "description": "A questionnaire question in place (title = prompt); sent with Pass back, not on tap.",
+                "properties": {
+                  "options": { "type": "array", "minItems": 2, "maxItems": 6, "uniqueItems": true, "items": { "type": "string", "pattern": "\\S" } },
+                  "multi": { "type": "boolean" },
+                  "recommended": { "type": ["string", "array"], "items": { "type": "string" } },
+                  "open_field": { "type": "object", "required": ["label"], "properties": { "label": { "type": "string", "pattern": "\\S" }, "placeholder": { "type": "string" } } }
+                }
+              },
               "action": {
                 "type": "object",
                 "required": ["actions"],
@@ -326,7 +337,7 @@
     "schedule": {
       "type": "object",
       "title": "Schedule (verb: triage)",
-      "description": "A day as time blocks the reader triages one by one: per block a one-tap tag (default: not relevant / prep me / comment), sent at once like an `action` press. Times render in `timezone`, in time order; overlaps and free gaps show. Use for a day plan, never for prose.",
+      "description": "A day as time blocks; the reader taps a meeting to select it whole (title + agenda) and comments on it, returned with Pass back. Times render in `timezone`, in time order; overlaps and free gaps show. Use for a day plan, never for prose.",
       "required": [
         "version",
         "timezone",
@@ -396,41 +407,6 @@
               "link": {
                 "type": "string",
                 "pattern": "^https?://\\S+$"
-              }
-            }
-          }
-        },
-        "actions": {
-          "type": "array",
-          "minItems": 0,
-          "maxItems": 6,
-          "description": "Optional tags replacing the defaults; the `action` block's actions[] shape; [] = read-only agenda.",
-          "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "label"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 64
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 120
-              },
-              "style": {
-                "enum": [
-                  "primary",
-                  "default",
-                  "danger"
-                ]
-              },
-              "requires_note": {
-                "type": "boolean"
               }
             }
           }

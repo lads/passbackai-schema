@@ -68,7 +68,7 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 | `mermaid` | watch | see a structure the decision depends on (display only) |
 | `action` | go | do a step now: one tap, sent at once, 10 s undo — not a question |
 | `cards` | scan | skim cards: title, one line, metric, expandable details |
-| `schedule` | triage | tag a day's time blocks one by one, each tag sent at once |
+| `schedule` | triage | a day's time blocks; a tap selects a whole meeting to comment on |
 | `compare` | choose version | keep or update your rewrite, per pair |
 
 **The weave law is two-sided — the one rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**, not "fits a shape" — an order you'd confidently recommend is settled: a numbered list, not `prioritize`. No catch-all "anything else?" closer; a two-way "ranking" is a `single-choice`; no filler options; don't split one real cluster into lonely blocks or lump unrelated questions into a `questionnaire`. Display blocks sit outside the law: a referenced video is a `youtube` block (never a Markdown image link or an `img.youtube.com` URL — that host is blocked and renders broken).
@@ -151,18 +151,19 @@ D={"single-choice":"id question!:S options!:L context recommended open_field:O"+
 "allocate":"items!:J total:n unit title instruction note_field:N"+G,
 "questionnaire":"questions!:Q title source_summary"+G,
 "youtube":"id!:Y title:s200 thumbnail","mermaid":"source!:S8000 title:s200",
-"action":"id title:s200 context actions!:K allow_multiple:b","cards":"id title:s200 items!:C","schedule":"id title:s200 date:D timezone!:V items!:B actions:Z","compare":"id title:s200 pairs!:F allow_edit:b bulk:b",
+"action":"id title:s200 context actions!:K allow_multiple:b","cards":"id title:s200 items!:C","schedule":"id title:s200 date:D timezone!:V items!:B actions:_","compare":"id title:s200 pairs!:F allow_edit:b bulk:b",
 "R":"from!:S return_prompt!","O":"label!:S placeholder","N":"enabled:b label",
 "q":"id!:S question!:S options!:a context section multi:b recommended:r open_field:O allow_note:b",
-"k":"id!:S64 label!:S120 style:W requires_note:b","c":"id!:S64 title!:S200 context!:S metric:E details badge:G action:X expanded:b","z":"id!:S64 start!:P end:P title!:S200 agenda location link:U","E":"value!:S40 label:s80 tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","f":"id!:S64 label:s120 current!:s1000 proposed!:s1000","j":"id!:S label!:S weight!:n context"}
+"k":"id!:S64 label!:S120 style:W requires_note:b","c":"id!:S64 title!:S200 context!:S metric:E details badge:G action:X expanded:b question:x","z":"id!:S64 start!:P end:P title!:S200 agenda location link:U","E":"value!:S40 label:s80 tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","f":"id!:S64 label:s120 current!:s1000 proposed!:s1000","j":"id!:S label!:S weight!:n context","x":"options!:T multi:b recommended:r open_field:O"}
 F={k:{f.strip("!"):(t[:1]or"s",int(t[1:]or 0),f[-1]=="!")for f,_,t in(x.partition(":")for x in v.split())}for k,v in D.items()}
 U={f for v in F.values()for f in v}
-A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1.6",C="c1.12",B="z1.24",Z="k0.6",F="f1.12")
+A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1.6",C="c1.12",B="z1.24",F="f1.12",T="s2.6")
 N=lambda x:type(x).__name__
 def TZ(x):
  try:import zoneinfo;zoneinfo.ZoneInfo(x);return x!=""
  except Exception:return 0
 def ck(x,t,p,o,L=0):
+ if t=="_":return
  w,n=p and"`"+p+"`"or"the body",N(x)
  if t in F:
   if n!="dict":return o.append(w+" must be an object")
@@ -179,7 +180,7 @@ def ck(x,t,p,o,L=0):
   if h and len(x)>int(h):o.append(w+" has more than "+h+" entries")
   for k,v in enumerate(x):ck(v,e,p+"[%d]"%k,o)
   z=[str(v.get("id"))for v in x if N(v)=="dict"]
-  if t in"IJKCBZF"and len(set(z))<len(z):o.append("duplicate `"+p+"[].id`")
+  if t in"IJKCBF"and len(set(z))<len(z):o.append("duplicate `"+p+"[].id`")
  elif t=="r":
   if n!="str"and(n!="list"or{N(e)for e in x}-{"str"}):o.append(w+" must be a string or an array of strings")
  elif n not in{"n":"int float","b":"bool"}.get(t,"str").split():o.append(w+" has the wrong type: "+n)
@@ -284,8 +285,8 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 | `youtube` | `id` = the bare 11-char video id | `title` | a full URL, `youtu.be` link or query string in `id` |
 | `mermaid` | `source` (Mermaid text in the JSON string, ≤8000) | `title` | a raw Mermaid body instead of JSON |
 | `action` | `actions` [{`id`,`label`}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | duplicate action `id`s |
-| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action` | duplicate `id`s; `context` over ~120 chars |
-| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link`, `actions` 0–6 (`[]` = read-only agenda) | a made-up zone; `9:30` (needs two digits) |
+| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action` (a one-tap command, sent at once), `question` {`options` 2–6, `multi`, `recommended`, `open_field`} (a decision, answered in place and sent with Pass back) | duplicate `id`s; `context` over ~120 chars |
+| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link` | a made-up zone; `9:30` (needs two digits) |
 | `compare` | `pairs` [{`id`,`current`,`proposed`}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
 
 Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean, matching an option label exactly. Don't put "Other" in `options` — the renderer adds one. **Cosmetic, still renders:** a `recommended` that doesn't match exactly (the badge drops), smart quotes or a trailing comma (the paste parser recovers them).
