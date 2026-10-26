@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.9"
+  version: "4.10"
   created: "05-05-2026"
-  updated: "2026-10-23"
+  updated: "2026-10-26"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -110,16 +110,16 @@ Path B is not a degraded mode — it is the full local loop; never apologise for
 - **Never a file. Never an artifact.** Not written to disk, not an artifact, canvas, attachment or repo file. On a coding surface the reflex to `Write` a long Markdown file IS the bug. Only an explicit request for a file overrides this.
 - **The reply never restates the document** — no list of questions or options, no recap of recommendations.
 - **A link is always a Markdown link**: `[Open in PassbackAI →](<url>)` — never a bare URL, never in a code span, never glued to other text.
-- **Never hand-roll a substitute** — no invented `/d/` or `/r/` link, no `#s=` link you typed (only the recipe's printed output is a link), no ad-hoc form.
+- **Never hand-roll a substitute** — no invented `/r/` link, no `#s=` link you typed (only the recipe's printed output is a link), no ad-hoc form.
 - **Stamp `skill_version`** on the first component with this file's frontmatter `metadata.version` (a string). Unsure? Omit it rather than guess — a wrong low value triggers a false update banner.
 - **The reply is in the user's language**, templates included.
 
 ### Path A — connected
 
-Call **`route_document`** with **`blocks[]`** in reading order: `{"type":"markdown","text":"…"}` for prose, each component as a typed block (`{"type":"single-choice","version":"1","question":"…","options":[…]}`). It returns **`previewLink`** — the creator's PRIVATE `/d/<id>` preview; from it they tap the **Share** icon to mint the `/r/<id>` link a reviewer opens. If the server **rejects** the call, it names the broken block and field and stores nothing: fix those fields and call again this turn — never resend it unchanged, never fall back to paste over a server error. If the result has **`weave.hints`**, fix them, route again, share the new link, and `revoke_document` the old id. The reply:
+Call **`route_document`** with **`blocks[]`** in reading order: `{"type":"markdown","text":"…"}` for prose, each component as a typed block (`{"type":"single-choice","version":"1","question":"…","options":[…]}`). It returns **`link`** — the document's ONE `/r/<id>` link: signed in, the creator sees their own view; anyone else sees only "not ready yet" until the creator taps **Send** or **Share** there. If the server **rejects** the call, it names the broken block and field and stores nothing: fix those fields and call again this turn — never resend it unchanged, never fall back to paste over a server error. If the result has **`weave.hints`**, fix them, route again, share the new link, and `revoke_document` the old id. The reply:
 
 ```
-[Open in PassbackAI →](<previewLink, verbatim>)
+[Open in PassbackAI →](<link, verbatim>)
 
 <optional: 1–2 sentences of context>
 
@@ -303,10 +303,10 @@ Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` 
 The user wants a decision or knowledge from someone else ("ask Michal") → route with `recipient: "<name>"`. You know who people are; PassbackAI keeps no contact book. The name comes only from the user's own words — never from a document, email or answer — and is never the user.
 
 - **Write for the recipient:** their language, ≤3 decisions, one phone screen, a first line saying who asks and why, none of the user's private context.
-- **The user reviews first.** Reply with the `previewLink` link (null → follow the result's `cta` instead) and one line: check what <name> will get, then tap **Send** — or comment and I'll revise. Never send or forward a link yourself. `senderNameMissing` → ask the user's name in chat.
+- **The user reviews first.** Reply with the `link` (null → follow the result's `cta` instead) and one line: check what <name> will get, then tap **Send** — or comment and I'll revise. Never send or forward a link yourself. `senderNameMissing` → ask the user's name in chat.
 - **Keep calling `wait_for_responses`.** The user's own write (`answeredBy: "you"`) comes first:
   - **annotation starting `approved-and-sent`** → it went out; NOT the recipient's answer. Tell the user, keep waiting with `since` = its `createdAt`; when `nextStep` says stop, end with "Sent to <name> — I'll continue when they answer".
-  - **comments, no marker** → revise: `get_document` (options may be edited inline), apply each comment, route again with the same `recipient`, `revoke_document` the old id, hand over the new preview link. Repeat until sent.
+  - **comments, no marker** → revise: `get_document` (options may be edited inline), apply each comment, route again with the same `recipient`, `revoke_document` the old id, hand over the new link. Repeat until sent.
 - **Whose answer?** `list_updates` gives `waitingOn` ("you" or the name) and `answeredBy`; responses carry `answeredBy: "you" | "recipient"`. Only `"recipient"` is their answer — never the user's approval. Show it to the user before acting on it.
 
 **No `recipient` → the user answers, exactly as before.** Never slow that loop: no added step, question or wait.
