@@ -244,7 +244,7 @@
     "action": {
       "type": "object",
       "title": "Action (verb: go)",
-      "description": "One-tap buttons that hand work back to YOU. A press is sent at once as its own partial response (a waiting wait_for_responses returns within seconds; no Pass back needed), with a 10 s undo that sends a retraction. Use for \"approve this step / prepare it / not now\", never to ask a question. Each press arrives as `actionEvents` {blockId, actionId, label, note?, at, retracted?} plus a net `actionState`. Routed documents only send immediately; on a pasted or `#s=` document the press is copied back as \"Action: <label>\".",
+      "description": "Buttons that hand work back to YOU, each a command (\"Ship them\", \"Prepare it\"). A press is recorded with the reader's other answers and returned with the document's one send, never on its own. A decision between options is `single-choice`, never `action`. Each press arrives as `actionEvents` {blockId, actionId, label, note?, at} plus a net `actionState`; a copied document carries \"Action: <label>\".",
       "required": ["version", "actions"],
       "properties": {
         "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
@@ -263,20 +263,20 @@
               "id": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Stable and unique; this is what comes back as actionId." },
               "label": { "type": "string", "minLength": 1, "maxLength": 120, "description": "Button text, e.g. \"Let's do it\"." },
               "style": { "enum": ["primary", "default", "danger"], "description": "Default \"default\"; one primary at most." },
-              "requires_note": { "type": "boolean", "description": "Ask for a one-line note before sending." }
+              "requires_note": { "type": "boolean", "description": "Ask for a one-line note with the press." }
             }
           }
         },
-        "allow_multiple": { "type": "boolean", "description": "Default false: a second press replaces the first (the history keeps both)." }
+        "allow_multiple": { "type": "boolean", "description": "Default false: a second press replaces the first." }
       },
       "examples": [
-        { "version": "1", "title": "Ship the 7 ready PRs?", "actions": [{ "id": "go", "label": "Let's do it", "style": "primary" }, { "id": "prep", "label": "Prepare it" }, { "id": "later", "label": "Not now" }] }
+        { "version": "1", "title": "7 PRs are ready", "actions": [{ "id": "go", "label": "Ship them", "style": "primary" }, { "id": "prep", "label": "Prepare release notes" }] }
       ]
     },
     "cards": {
       "type": "object",
       "title": "Cards (verb: scan)",
-      "description": "Compact cards a reader skims in ~30 s: title, ONE short context line, optional highlighted `metric` (\"7 PRs\") and `details` that expand on tap. The reader comments on a card like any passage; an optional per-card `action` is sent at once like an `action` block. Keep `context` under ~120 chars; the rest goes in `details`. `badge` marks what is new/changed.",
+      "description": "Compact cards a reader skims in ~30 s: title, ONE short context line, optional highlighted `metric` (\"7 PRs\") and `details` that expand on tap. The reader comments on a card like any passage; an optional per-card `action` works like an `action` block. Keep `context` under ~120 chars; the rest goes in `details`. `badge` marks what is new/changed.",
       "required": ["version", "items"],
       "properties": {
         "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },

@@ -66,7 +66,7 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 | `questionnaire` | group | answer 3+ TIGHTLY related questions as one cluster |
 | `youtube` | watch | see a referenced video (display only) |
 | `mermaid` | watch | see a structure the decision depends on (display only) |
-| `action` | go | do a step now: one tap, sent at once, 10 s undo — not a question |
+| `action` | go | a command the agent runs ("Ship them"); returned with the send — a question with options is `single-choice` |
 | `cards` | scan | skim cards: title, one line, metric, expandable details |
 | `schedule` | triage | a day's time blocks; a tap selects a whole meeting to comment on |
 | `compare` | choose version | keep or update your rewrite, per pair |
@@ -285,7 +285,7 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 | `youtube` | `id` = the bare 11-char video id | `title` | a full URL, `youtu.be` link or query string in `id` |
 | `mermaid` | `source` (Mermaid text in the JSON string, ≤8000) | `title` | a raw Mermaid body instead of JSON |
 | `action` | `actions` [{`id`,`label`}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | duplicate action `id`s |
-| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action` (a one-tap command, sent at once), `question` {`options` 2–6, `multi`, `recommended`, `open_field`} (a decision, answered in place and sent with Pass back) | duplicate `id`s; `context` over ~120 chars |
+| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action` (a command, returned with the send), `question` {`options` 2–6, `multi`, `recommended`, `open_field`} (a decision, answered in place and returned with the send) | duplicate `id`s; `context` over ~120 chars |
 | `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link` | a made-up zone; `9:30` (needs two digits) |
 | `compare` | `pairs` [{`id`,`current`,`proposed`}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
 
