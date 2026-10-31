@@ -1198,6 +1198,8 @@ neither, and refuses it when called with `strict: true`. The same holds for an `
 - An item `question` is answered in place and returned with the final send as the block's one
   componentInput, keyed by item id: `{ blockId: "sch-embed-N", answer: { answers: { "<itemId>": { selected, openText, note } } } }`
   (the same answer shape as a questionnaire question). The copy-out carries `- <item title>: Answer: <pick>`.
+- In a week, a tap on a day's header (or its summary) selects the whole day — every meeting on it, first to
+  last — as one comment unit, for a comment about the day itself.
 - The owner filter is the reader's view only; it hides no data and is not returned.
 - A legacy `actions` field (the one-tap tags of `r24`–`r26`) is accepted and ignored.
 
