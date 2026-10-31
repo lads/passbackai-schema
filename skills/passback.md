@@ -151,13 +151,13 @@ D={"single-choice":"id question!:S options!:L context recommended open_field:O"+
 "allocate":"items!:J total:n unit title instruction note_field:N"+G,
 "questionnaire":"questions!:Q title source_summary"+G,
 "youtube":"id!:Y title:s200 thumbnail","mermaid":"source!:S8000 title:s200",
-"action":"id title:s200 context actions!:K allow_multiple:b","cards":"id title:s200 items!:C","schedule":"id title:s200 date:D timezone!:V items!:B actions:_","compare":"id title:s200 pairs!:F allow_edit:b bulk:b",
+"action":"id title:s200 context actions!:K allow_multiple:b","cards":"id title:s200 items!:C","schedule":"id title:s200 date:D timezone!:V items!:B actions:_ days:n hide_empty_days:b day_summaries:m owners:M","compare":"id title:s200 pairs!:F allow_edit:b bulk:b",
 "R":"from!:S return_prompt!","O":"label!:S placeholder","N":"enabled:b label",
 "q":"id!:S question!:S options!:a context section multi:b recommended:r open_field:O allow_note:b",
-"k":"id!:S64 label!:S120 style:W requires_note:b","c":"id!:S64 title!:S200 context!:S metric:E details badge:G action:X expanded:b question:x","z":"id!:S64 start!:P end:P title!:S200 agenda location link:U","E":"value!:S40 label:s80 tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","f":"id!:S64 label:s120 current!:s1000 proposed!:s1000","j":"id!:S label!:S weight!:n context","x":"options!:T multi:b recommended:r open_field:O"}
+"k":"id!:S64 label!:S120 style:W requires_note:b","c":"id!:S64 title!:S200 context!:S metric:E details badge:G action:X expanded:b question:x","z":"id!:S64 start:P end:P title!:S200 agenda location link:U date:D all_day:b owner question:y","y":"prompt options:T multi:b recommended:r open_field:O","m":"","o":"id!:S label!:S color:Z","E":"value!:S40 label:s80 tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","f":"id!:S64 label:s120 current!:s1000 proposed!:s1000","j":"id!:S label!:S weight!:n context","x":"options!:T multi:b recommended:r open_field:O"}
 F={k:{f.strip("!"):(t[:1]or"s",int(t[1:]or 0),f[-1]=="!")for f,_,t in(x.partition(":")for x in v.split())}for k,v in D.items()}
 U={f for v in F.values()for f in v}
-A=dict(a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1.6",C="c1.12",B="z1.24",F="f1.12",T="s2.6")
+A=dict(M="o0.6",a="s0",L="s2",I="i1",J="j2",Q="q1",K="k1.6",C="c1.12",B="z1.24",F="f1.12",T="s2.6")
 N=lambda x:type(x).__name__
 def TZ(x):
  try:import zoneinfo;zoneinfo.ZoneInfo(x);return x!=""
@@ -190,6 +190,7 @@ def ck(x,t,p,o,L=0):
  elif t=="W"and x not in("primary","default","danger"):o.append(w+" must be primary, default or danger")
  elif t=="H"and x not in("neutral","good","warn","bad"):o.append(w+" must be neutral, good, warn or bad")
  elif t=="G"and x not in("new","changed"):o.append(w+" must be new or changed")
+ elif t=="Z"and x not in"blue pink green orange purple teal gray".split():o.append(w+" is not a named colour")
  elif t=="P"and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d|\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d+)?)?(Z|[+-]\d{2}:\d{2})",x):o.append(w+" must be HH:MM or ISO 8601 with an offset")
  elif t=="D"and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",x):o.append(w+" must be YYYY-MM-DD")
  elif t=="U"and not re.fullmatch(r"https?://\S+",x):o.append(w+" must be an http(s) URL")
@@ -286,7 +287,7 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 | `mermaid` | `source` (Mermaid text in the JSON string, ≤8000) | `title` | a raw Mermaid body instead of JSON |
 | `action` | `actions` [{`id`,`label`}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | duplicate action `id`s |
 | `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action` (a command, returned with the send), `question` {`options` 2–6, `multi`, `recommended`, `open_field`} (a decision, answered in place and returned with the send) | duplicate `id`s; `context` over ~120 chars |
-| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link` | a made-up zone; `9:30` (needs two digits) |
+| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link`; a week: `days`, `day_summaries`, `owners`, per item `date`/`all_day`/`owner`/`question` | a made-up zone; `9:30` (needs two digits) |
 | `compare` | `pairs` [{`id`,`current`,`proposed`}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
 
 Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean, matching an option label exactly. Don't put "Other" in `options` — the renderer adds one. **Cosmetic, still renders:** a `recommended` that doesn't match exactly (the badge drops), smart quotes or a trailing comma (the paste parser recovers them).
