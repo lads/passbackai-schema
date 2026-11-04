@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.10"
+  version: "4.11"
   created: "05-05-2026"
-  updated: "2026-10-26"
+  updated: "2026-11-03"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -70,6 +70,7 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 | `cards` | scan | skim cards: title, one line, metric, expandable details |
 | `schedule` | triage | a day's time blocks; a tap selects a whole meeting to comment on |
 | `compare` | choose version | keep or update your rewrite, per pair |
+| `page` | mark up | mark up a live web page (needs the PassbackAI Chrome extension) |
 
 **The weave law is two-sided — the one rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**, not "fits a shape" — an order you'd confidently recommend is settled: a numbered list, not `prioritize`. No catch-all "anything else?" closer; a two-way "ranking" is a `single-choice`; no filler options; don't split one real cluster into lonely blocks or lump unrelated questions into a `questionnaire`. Display blocks sit outside the law: a referenced video is a `youtube` block (never a Markdown image link or an `img.youtube.com` URL — that host is blocked and renders broken).
 
@@ -151,7 +152,7 @@ D={"single-choice":"id question!:S options!:L context recommended open_field:O"+
 "allocate":"items!:J total:n unit title instruction note_field:N"+G,
 "questionnaire":"questions!:Q title source_summary"+G,
 "youtube":"id!:Y title:s200 thumbnail","mermaid":"source!:S8000 title:s200",
-"action":"id title:s200 context actions!:K allow_multiple:b","cards":"id title:s200 items!:C","schedule":"id title:s200 date:D timezone!:V items!:B actions:_ days:n hide_empty_days:b day_summaries:m owners:M","compare":"id title:s200 pairs!:F allow_edit:b bulk:b",
+"action":"id title:s200 context actions!:K allow_multiple:b","cards":"id title:s200 items!:C","schedule":"id title:s200 date:D timezone!:V items!:B actions:_ days:n hide_empty_days:b day_summaries:m owners:M","compare":"id title:s200 pairs!:F allow_edit:b bulk:b","page":"url!:u2000 title:s200 instruction:s500",
 "R":"from!:S return_prompt!","O":"label!:S placeholder","N":"enabled:b label",
 "q":"id!:S question!:S options!:a context section multi:b recommended:r open_field:O allow_note:b",
 "k":"id!:S64 label!:S120 style:W requires_note:b","c":"id!:S64 title!:S200 context!:S metric:E details badge:G action:X expanded:b question:x","z":"id!:S64 start:P end:P title!:S200 agenda location link:U date:D all_day:b owner question:y","y":"prompt options:T multi:b recommended:r open_field:O","m":"","o":"id!:S label!:S color:Z","E":"value!:S40 label:s80 tone:H","X":"actions!:K allow_multiple:b","i":"id!:S label!:S context","f":"id!:S64 label:s120 current!:s1000 proposed!:s1000","j":"id!:S label!:S weight!:n context","x":"options!:T multi:b recommended:r open_field:O"}
@@ -194,9 +195,10 @@ def ck(x,t,p,o,L=0):
  elif t=="P"and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d|\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d+)?)?(Z|[+-]\d{2}:\d{2})",x):o.append(w+" must be HH:MM or ISO 8601 with an offset")
  elif t=="D"and not re.fullmatch(r"\d{4}-\d{2}-\d{2}",x):o.append(w+" must be YYYY-MM-DD")
  elif t=="U"and not re.fullmatch(r"https?://\S+",x):o.append(w+" must be an http(s) URL")
+ elif t=="u"and not re.fullmatch(r"https://\S+",x):o.append(w+" must be an https:// URL")
  elif t=="V"and not TZ(x):o.append(w+" must be an IANA time zone")
 B=[]
-for i,(t,b)in enumerate(re.findall(r"^```("+"|".join(list(D)[:12])+r")[ \t]*\n(.*?)\n```[ \t]*$",d,re.S|re.M),1):
+for i,(t,b)in enumerate(re.findall(r"^```("+"|".join(list(D)[:13])+r")[ \t]*\n(.*?)\n```[ \t]*$",d,re.S|re.M),1):
  o=[]
  try:x=json.loads(b)
  except ValueError as e:o=["not JSON ("+str(e)+")"]
@@ -234,7 +236,7 @@ N decision points — the whole document is packed into the link. Answer on the 
 
 Output **exactly two things, in this order, and nothing else.**
 
-**(1) The whole woven document inside ONE outer fence of FOUR backticks, no info-string** — the components inside use three-backtick fences, which would close a three-backtick outer fence early. Each component sits in its own inner fence tagged with its name (` ```single-choice `, ` ```multi-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```questionnaire `, ` ```youtube `, ` ```mermaid `, ` ```action `, ` ```cards `, ` ```schedule `, ` ```compare `) holding one bare-JSON object, **straight ASCII quotes only**. The literal shape (shown inside five backticks):
+**(1) The whole woven document inside ONE outer fence of FOUR backticks, no info-string** — the components inside use three-backtick fences, which would close a three-backtick outer fence early. Each component sits in its own inner fence tagged with its name (` ```single-choice `, ` ```multi-choice `, ` ```open-question `, ` ```prioritize `, ` ```allocate `, ` ```questionnaire `, ` ```youtube `, ` ```mermaid `, ` ```action `, ` ```cards `, ` ```schedule `, ` ```compare `, ` ```page `) holding one bare-JSON object, **straight ASCII quotes only**. The literal shape (shown inside five backticks):
 
 `````markdown
 ````
@@ -289,6 +291,7 @@ Fields are identical on both paths. The Path A server and the B1 recipe reject a
 | `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action` (a command, returned with the send), `question` {`options` 2–6, `multi`, `recommended`, `open_field`} (a decision, answered in place and returned with the send) | duplicate `id`s; `context` over ~120 chars |
 | `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link`; a week: `days`, `day_summaries`, `owners`, per item `date`/`all_day`/`owner`/`question` | a made-up zone; `9:30` (needs two digits) |
 | `compare` | `pairs` [{`id`,`current`,`proposed`}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
+| `page` | `url` = an `https://` URL | `title`, `instruction` (≤500) | an `http://` URL or no scheme |
 
 Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean, matching an option label exactly. Don't put "Other" in `options` — the renderer adds one. **Cosmetic, still renders:** a `recommended` that doesn't match exactly (the badge drops), smart quotes or a trailing comma (the paste parser recovers them).
 
@@ -327,7 +330,7 @@ if not m:sys.exit("NO #s= LINK -- ask for the link they copied")
 raw=base64.urlsafe_b64decode(m.group(1)+"="*(-len(m.group(1))%4))
 if raw[:2]!=b"\x1f\x8b":sys.exit("PASSWORD-PROTECTED -- ask them to use Copy instead")
 s=json.loads(gzip.decompress(raw))
-P={"questionnaire": "q", "prioritize": "p", "allocate": "a", "single-choice": "sc", "multi-choice": "mc", "open-question": "oq", "action": "ac", "cards": "cd", "schedule": "sch", "compare": "cmp"}
+P={"questionnaire": "q", "prioritize": "p", "allocate": "a", "single-choice": "sc", "multi-choice": "mc", "open-question": "oq", "action": "ac", "cards": "cd", "schedule": "sch", "compare": "cmp", "page": "pg"}
 n,out=Counter(),[]
 for t,b in re.findall(r"^```("+"|".join(P)+r")[ \t]*\n(.*?)\n```[ \t]*$",s.get("markdown",""),re.S|re.M):
  try:c=json.loads(b)
