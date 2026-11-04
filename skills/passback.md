@@ -87,7 +87,7 @@ A **comprehension** aid the reviewer can comment on node by node: a process, flo
 
 **Verify before you choose Path B — never infer it from a listing.** Harnesses list MCP tools by name only until loaded, and may show a stale second PassbackAI entry as "needs authentication". If any `route_document` / `list_updates` name is visible, load it and call **`list_updates`**: a result means Path A.
 
-Path B is not a degraded mode — it is the full local loop; never apologise for it or ask the user to connect. **The document is the same work on both paths; only the last step differs.**
+Path B is not a degraded mode — it is the full local loop; never apologise or ask the user to connect. **The document is the same work on both paths; only the last step differs.**
 
 ## ROUTE — scan, shape, weave, check, deliver
 
@@ -100,7 +100,7 @@ Path B is not a degraded mode — it is the full local loop; never apologise for
 - **Blocking order, hinge named.** The decision others depend on goes first, and says so ("everything below assumes an answer here"); when one answer moots a later point, say it in that point's lead-in.
 - **Prose before every component:** the context, what each real option *costs*, and — with `recommended` — why you lean that way and what would change your mind. This lead-in carries the explanation, not the per-question `context` field.
 - **Open with 1–3 sentences of framing** (who it's from, what it's for, none of it is a test) and close with a send-back line — the renderer shows neither `title` nor `routing.return_prompt`.
-- **Settled prose is claims, not narrative** — short assertions to confirm or contest.
+- **Settled prose is claims, not narrative** — assertions to confirm or contest.
 - **Reviewer = the user, by default.** Add `routing: {"from": "<sender>", "return_prompt": "…send back to <sender>."}` on the first component ONLY when the user names someone else to send it to (`return_prompt` must contain the literal `from`), and say so in the framing. Connected? Set `recipient` too — see **Asking someone else**. Never ask "are you answering these yourself?".
 
 **4. Check — read it as the reviewer, cold.** Is each component the real question, answerable from what's on the page, and would its answer unblock the work? A fact only in your head belongs in the lead-in. Then run **the shape table** over every component.
@@ -108,16 +108,16 @@ Path B is not a degraded mode — it is the full local loop; never apologise for
 **5. Deliver** — on both paths:
 
 - **Deliver in THIS turn** — never a promise for next turn. **Long document** (8+ components): say so in one line before routing; never cut open points to shorten the wait. When the hinge answers would genuinely reshape later questions, route ONLY the hinges now and say round 2 follows from their answers — round 1 still ships this turn.
-- **Never a file. Never an artifact.** Not written to disk, not an artifact, canvas, attachment or repo file. On a coding surface the reflex to `Write` a long Markdown file IS the bug. Only an explicit request for a file overrides this.
-- **The reply never restates the document** — no list of questions or options, no recap of recommendations.
+- **Never a file. Never an artifact.** Not on disk, not an artifact, canvas, attachment or repo file — on a coding surface the reflex to `Write` a long Markdown file IS the bug. Only an explicit request for a file overrides this.
+- **The reply never restates the document** — no list of questions or options, no recap.
 - **A link is always a Markdown link**: `[Open in PassbackAI →](<url>)` — never a bare URL, never in a code span, never glued to other text.
 - **Never hand-roll a substitute** — no invented `/r/` link, no `#s=` link you typed (only the recipe's printed output is a link), no ad-hoc form.
-- **Stamp `skill_version`** on the first component with this file's frontmatter `metadata.version` (a string). Unsure? Omit it rather than guess — a wrong low value triggers a false update banner.
+- **Stamp `skill_version`** on the first component with this file's frontmatter `metadata.version` (a string). Omit it rather than guess (a wrong low value shows a false update banner).
 - **The reply is in the user's language**, templates included.
 
 ### Path A — connected
 
-Call **`route_document`** with **`blocks[]`** in reading order: `{"type":"markdown","text":"…"}` for prose, each component as a typed block (`{"type":"single-choice","version":"1","question":"…","options":[…]}`). It returns **`link`** — the document's ONE `/r/<id>` link: signed in, the creator sees their own view; anyone else sees only "not ready yet" until the creator taps **Send** or **Share** there. If the server **rejects** the call, it names the broken block and field and stores nothing: fix those fields and call again this turn — never resend it unchanged, never fall back to paste over a server error. If the result has **`weave.hints`**, fix them, route again, share the new link, and `revoke_document` the old id. The reply:
+Call **`route_document`** with **`blocks[]`** in reading order (+ **`returnUrl`**: your session, `claude://claude.ai/code/session_…`/`cowork/…`, if known): `{"type":"markdown","text":"…"}` for prose, each component as a typed block (`{"type":"single-choice","version":"1","question":"…","options":[…]}`). It returns **`link`** — the document's ONE `/r/<id>` link: signed in, the creator sees their own view; anyone else sees only "not ready yet" until the creator taps **Send** or **Share** there. If the server **rejects** the call, it names the broken block and field and stores nothing: fix those fields and call again this turn — never resend it unchanged, never fall back to paste over a server error. If the result has **`weave.hints`**, fix them, route again, share the new link, and `revoke_document` the old id. The reply:
 
 ```
 [Open in PassbackAI →](<link, verbatim>)
@@ -135,12 +135,13 @@ N decision points. Answer on the page — I'm waiting here and will pick up your
 
 ### Path B1 — the one-click link (you can run a shell command)
 
-A share link carries the WHOLE document in the URL fragment (`#s=`, never sent to a server) as gzip + base64url, which no model can compute by hand — so **run this exact recipe**, pasting the woven document between the two `PASSBACK_DOC` lines and changing nothing else:
+A share link packs the WHOLE document into the URL fragment (`#s=`, never sent to a server) — no model can compute it by hand, so **run this exact recipe**, pasting the woven document between the two `PASSBACK_DOC` lines, `PASSBACK_BACK` = that `returnUrl` if known, changing nothing else:
 
 <!-- passback-link-recipe:start -->
 ```bash
-python3 -c '
-import sys,json,gzip,base64,re
+PASSBACK_BACK='' python3 -c '
+import sys,json,gzip,base64,re,os
+from urllib.parse import quote
 d=sys.stdin.read().strip()
 m=re.fullmatch(r"`{4,}[^\n]*\n(.*)\n`{4,}",d,re.S)
 if m:d=m.group(1).strip()
@@ -211,16 +212,17 @@ for i,(t,b)in enumerate(re.findall(r"^```("+"|".join(list(D)[:13])+r")[ \t]*\n(.
 if B:sys.exit("FIX and re-run -- "+" | ".join(B))
 k=base64.urlsafe_b64encode(gzip.compress(json.dumps({"markdown":d,"sharedBy":"captured-from-Claude"},ensure_ascii=False).encode(),9,mtime=0)).decode().rstrip("=")
 if len(k)>30000:sys.exit("TOO LONG for a link -- deliver the code block")
-print("https://passbackai.com/review#s="+k)
+r=os.environ.get("PASSBACK_BACK")
+print("https://passbackai.com/review#s="+k+("&back="+quote(r,safe="")if r else""))
 ' <<'PASSBACK_DOC'
 <the woven document — exactly what B2 would put inside the four-backtick fence>
 PASSBACK_DOC
 ```
 <!-- passback-link-recipe:end -->
 
-- **It prints one URL → that is your link.** Copy it verbatim, character for character — one wrong character and it opens nothing.
-- **`FIX and re-run`** → it checks every component against the same shape rules as the server (fields, types, counts, lengths) and names each broken field. Fix and run again — never route around it to B2.
-- **`TOO LONG`**, no `python3`, a refused sandbox, any other error → **B2** with the same document, no apology.
+- **It prints one URL → your link.** Copy it verbatim, character for character.
+- **`FIX and re-run`** → it checks every component against the same shape rules as the server and names each broken field. Fix and rerun — never route around it to B2.
+- **`TOO LONG`**, no `python3`, a refused sandbox, any other error → **B2**, same document, no apology.
 
 The reply:
 
