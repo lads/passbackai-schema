@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.11"
+  version: "4.12"
   created: "05-05-2026"
   updated: "2026-11-03"
 ---
