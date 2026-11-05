@@ -478,6 +478,7 @@ There is **no `type` field.**
 
 Model a rating/scale or yes/no as option labels (e.g. `["1","2","3","4","5"]`, `["Yes","No"]`).
 Note: a **note** field is also on every option-bearing question, and a note alone counts as a valid
+answer. The reader can also pin a note to **one option** (picked or not) — that, too, counts as an
 answer. (Ranking/ordering is a **separate component** — see [§4](#4-component-prioritize--order) — not a question mode.)
 
 ### 3.3 Options and the "Other" row
@@ -561,6 +562,8 @@ omitted); entries separated by `---`.
 - Multi-select with one pick: `Answer: {label}`; with 2+ picks: `Answers:` then `- {label}` bullets.
 - "Other" / free-text pick: `Answer: {open_field.label} {typed text}`.
 - A non-empty note adds a `Note: {text}` line; a note-only answer emits just the `Note:` line.
+- Per-option notes follow as `Option notes:` then `- {label} (picked|not picked): {text}` bullets, in
+  option order. Over MCP the raw answer carries them as `optionNotes: [{ option, text }]`.
 - Header: `Answers → {routing.from}` if routing is set, else `## {title}` if a title exists, else nothing.
 - Footer (if `skill_version` was present): `<!-- question-extractor:v{skill_version} -->`.
 
@@ -1123,7 +1126,7 @@ tap — the reader comments on a card like any passage, or presses the card's ow
 | `expanded` | optional boolean: `true` arrives open |
 | `badge` | `new` \| `changed` — so an update shows only what changed |
 | `action` | optional `{ actions[], allow_multiple? }`, same fields as [§4.8](#48-component-action--go): a press is recorded and returned with the send, exactly like an `action` block |
-| `question` | optional `{ options, multi?, recommended?, open_field? }` — a **questionnaire question in place**, whose prompt is the card's `title`: `options` 2–6 distinct labels, `multi` for choose-many, `recommended` an exact label (an array when `multi`), `open_field` relabels the default "Other" row exactly as in a questionnaire. It is a decision, so it is **not** sent on tap: it is collected and returned with the final send (`componentInputs` `{ blockId, answer: { answers: { <itemId>: { selected, openText, note } } } }`; copied back as `- <card>: Answer: <pick>`). Use `question` for a choice the reader decides, `action` for a one-tap command |
+| `question` | optional `{ options, multi?, recommended?, open_field? }` — a **questionnaire question in place**, whose prompt is the card's `title`: `options` 2–6 distinct labels, `multi` for choose-many, `recommended` an exact label (an array when `multi`), `open_field` relabels the default "Other" row exactly as in a questionnaire. It is a decision, so it is **not** sent on tap: it is collected and returned with the final send (`componentInputs` `{ blockId, answer: { answers: { <itemId>: { selected, openText, note, optionNotes? } } } }`; copied back as `- <card>: Answer: <pick>`). Use `question` for a choice the reader decides, `action` for a one-tap command |
 
 ### 4.9.2 Behaviour per surface and answers
 
@@ -1197,7 +1200,7 @@ neither, and refuses it when called with `strict: true`. The same holds for an `
   together, and the reader's comment — "not relevant", "prep me for this", anything — is an ordinary
   annotation anchored to that meeting, returned with the final send on every surface.
 - An item `question` is answered in place and returned with the final send as the block's one
-  componentInput, keyed by item id: `{ blockId: "sch-embed-N", answer: { answers: { "<itemId>": { selected, openText, note } } } }`
+  componentInput, keyed by item id: `{ blockId: "sch-embed-N", answer: { answers: { "<itemId>": { selected, openText, note, optionNotes? } } } }`
   (the same answer shape as a questionnaire question). The copy-out carries `- <item title>: Answer: <pick>`.
 - In a week, a tap on a day's header (or its summary) selects the whole day — every meeting on it, first to
   last — as one comment unit, for a comment about the day itself.
