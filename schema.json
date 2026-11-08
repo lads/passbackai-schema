@@ -17,7 +17,8 @@
     { "$ref": "#/$defs/cards" },
     { "$ref": "#/$defs/schedule" },
     { "$ref": "#/$defs/compare" },
-    { "$ref": "#/$defs/page" }
+    { "$ref": "#/$defs/page" },
+    { "$ref": "#/$defs/link" }
   ],
   "$defs": {
     "routing": {
@@ -592,6 +593,42 @@
       },
       "examples": [
         { "version": "1", "url": "https://example.com/pricing", "title": "Pricing page", "instruction": "Mark anything that would stop you starting a trial." }
+      ]
+    },
+    "link": {
+      "type": "object",
+      "title": "Link (verb: look)",
+      "description": "Show links the reader is meant to LOOK AT (inspiration, competitors, products) as previews, not text: `chip` (small thumbnail row), `hero` (one large card), `gallery` (a grid). A link that is a source or reference stays a plain Markdown link. Fetch each site's og:image yourself and pass it as `image`, a downscaled base64 data: URI; the page never contacts the site. Each card takes a quick reaction (Like / Not for me) and a full comment.",
+      "required": ["version", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "const": "1", "description": "Always the string \"1\" — the number 1 is rejected." },
+        "id": { "type": "string", "description": "Optional stable id; defaults to the block's document position." },
+        "title": { "type": "string", "maxLength": 200 },
+        "layout": { "enum": ["chip", "hero", "gallery"], "description": "Default: hero for one item, gallery for more." },
+        "reactions": { "type": "boolean", "description": "Default true; false hides the reaction buttons." },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "description": "1–12 links; `id` unique.",
+          "items": {
+            "type": "object",
+            "required": ["id", "url", "title"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "url": { "type": "string", "pattern": "^https?://\\S+$", "maxLength": 2000 },
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "description": { "type": "string", "maxLength": 300, "description": "One or two lines; not shown in a chip." },
+              "site": { "type": "string", "maxLength": 80, "description": "Display name; else the host." },
+              "image": { "type": "string", "description": "data:image/(png|jpeg|webp|gif);base64,… — ≈400×210 and ~15 KB in a gallery, up to 80 KB for a hero. Invalid or oversized → dropped, a neutral facade shown." }
+            }
+          }
+        }
+      },
+      "examples": [
+        { "version": "1", "layout": "gallery", "title": "Inspiration", "items": [ { "id": "a", "url": "https://example.com", "title": "Example", "description": "Bold type, one colour." } ] }
       ]
     }
   }
