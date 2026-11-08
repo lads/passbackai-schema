@@ -5,9 +5,9 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.14"
+  version: "4.15"
   created: "05-05-2026"
-  updated: "2026-11-03"
+  updated: "2026-11-08"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -129,7 +129,7 @@ Call **`route_document`** with **`blocks[]`** in reading order (+ **`returnUrl`*
 
 <optional: 1–2 sentences of context>
 
-N decision points. Answer on the page — I'm waiting here and will pick up your answers the moment you submit.
+N decision points. Open it now and I'll pick up your answers the moment you send. Opening it later? Tell me “I answered” when you’re done.
 ```
 
 (A `prioritize` counts as one.) Then **follow the result's `cta`**: call **`wait_for_responses`** with the `documentId`, again each time it returns `status: "waiting"`, until its `nextStep` says stop, then go straight into **Closing the loop**. Never ask for pasted answers on this path, and never end the turn right after the link.
