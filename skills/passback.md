@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.13"
+  version: "4.14"
   created: "05-05-2026"
   updated: "2026-11-03"
 ---
@@ -78,6 +78,10 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 ### Diagrams — `mermaid` when structure gets dense
 
 A **comprehension** aid the reviewer can comment on node by node: a process, flow, sequence, state machine, decision tree, architecture, dependency order or timeline — right after the sentence it clarifies. A before → after **pair** is often the highest-value move when the doc weighs a change, if each side is structurally non-trivial; the decision still rides a component after it. Three linear steps stay prose. **The body is JSON, like every component:** `{"version":"1","source":"graph TD; A[Read] --> C{Cached?}; C -->|hit| S[Serve]; C -->|miss| O[Origin];","title":"Read path"}` — the app derives node ids from `source`.
+
+### Links — `link` when the reader should *see* the sites
+
+Sites to look at (inspiration, competitors, products) are a `link` block — `hero` for one, `gallery` for a set, `chip` inline; a source, doc or PR stays a Markdown link. Fetch each `og:image`, downscale it (≈420×220 WebP, ~15 KB; hero ≤80 KB) and pass a base64 `data:` URI as `image` — never an image URL; can't fetch → omit. Images overflow B1's link cap: route a gallery (A) or use B2.
 
 ## Step 0 — know your delivery path BEFORE you author
 
