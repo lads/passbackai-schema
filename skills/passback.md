@@ -5,7 +5,7 @@ license: Proprietary. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.16"
+  version: "4.17"
   created: "05-05-2026"
   updated: "2026-11-09"
 ---
@@ -104,7 +104,7 @@ Path B is not a degraded mode — it is the full local loop; never apologise or 
 
 - **Blocking order, hinge named.** The decision others depend on goes first, and says so ("everything below assumes an answer here"); when one answer moots a later point, say it in that point's lead-in.
 - **Prose before every component:** the context, what each real option *costs*, and — with `recommended` — why you lean that way and what would change your mind. This lead-in carries the explanation, not the per-question `context` field.
-- **Open with 1–3 sentences of framing** (who it's from, what it's for, none of it is a test) and close with a send-back line — the renderer shows neither `title` nor `routing.return_prompt`.
+- **Open with the `# title` as the FIRST line** (prose above it breaks the layout), **then 1–3 sentences of framing** (who it's from, what it's for, none of it is a test) and close with a send-back line — the renderer shows neither `title` nor `routing.return_prompt`.
 - **Settled prose is claims, not narrative** — assertions to confirm or contest.
 - **Reviewer = the user, by default.** Add `routing: {"from": "<sender>", "return_prompt": "…send back to <sender>."}` on the first component ONLY when the user names someone else to send it to (`return_prompt` must contain the literal `from`), and say so in the framing. Connected? Set `recipient` too — see **Asking someone else**. Never ask "are you answering these yourself?".
 
