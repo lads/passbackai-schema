@@ -1,7 +1,7 @@
 ---
 name: passback
 description: Turn open decisions into one interactive PassbackAI page, then act on the answers. Use proactively whenever 3+ decision-shaped questions await the user — raised by the conversation or written in your own plan, summary or artifact — and whenever someone wants feedback on a draft, a decision from someone else, open questions pulled out of messy input, or to know what came back on a doc they sent, or says "passbackai" / "/passback". Any language. The MCP connector is optional — without it, deliver a one-click link or ONE code block in the reply, never a file or an artifact.
-license: Proprietary. See https://passbackai.com
+license: Proprietary; free to install and use as-is. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
@@ -285,7 +285,7 @@ N decision points.
 
 ## The shape table — every component, both paths
 
-Fields are identical on both paths. The Path A server and the B1 recipe reject a block off its shape; on B2 **you are the only gate**: a block whose JSON doesn't match its tag renders as raw JSON in a grey box. Full schema: <https://passbackai.com/ask> (JSON Schema `/schema.json`). Counts and lengths below are hard limits.
+The Path A server and the B1 recipe reject a block off its shape; on B2 **you are the only gate**: a block whose JSON doesn't match its tag renders as raw JSON in a grey box. Full schema: <https://passbackai.com/ask> (JSON Schema `/schema.json`). Counts and lengths below are hard limits.
 
 | Component | Required | Optional | FATAL if… (block renders as raw code) |
 |---|---|---|---|
