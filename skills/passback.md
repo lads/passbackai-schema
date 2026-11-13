@@ -5,9 +5,9 @@ license: Proprietary; free to install and use as-is. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.17"
+  version: "4.18"
   created: "05-05-2026"
-  updated: "2026-11-09"
+  updated: "2026-11-13"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -106,14 +106,14 @@ Path B is not a degraded mode — it is the full local loop; never apologise or 
 - **Prose before every component:** the context, what each real option *costs*, and — with `recommended` — why you lean that way and what would change your mind. This lead-in carries the explanation, not the per-question `context` field.
 - **Open with the `# title` as the FIRST line** (prose above it breaks the layout), **then 1–3 sentences of framing** (who it's from, what it's for, none of it is a test) and close with a send-back line — the renderer shows neither `title` nor `routing.return_prompt`.
 - **Settled prose is claims, not narrative** — assertions to confirm or contest.
-- **Reviewer = the user, by default.** Add `routing: {"from": "<sender>", "return_prompt": "…send back to <sender>."}` on the first component ONLY when the user names someone else to send it to (`return_prompt` must contain the literal `from`), and say so in the framing. Connected? Set `recipient` too — see **Asking someone else**. Never ask "are you answering these yourself?".
+- **Reviewer = the user, by default.** Connected, add `routing: {"from": "<sender>", "return_prompt": "…send back to <sender>."}` on the first component ONLY when the user names someone else to send it to (`return_prompt` must contain the literal `from`), say so in the framing, and set `recipient` — see **Asking someone else**. Never ask "are you answering these yourself?".
 
 **4. Check — read it as the reviewer, cold.** Is each component the real question, answerable from what's on the page, and would its answer unblock the work? A fact only in your head belongs in the lead-in. Then run **the shape table** over every component.
 
 **5. Deliver** — on both paths:
 
 - **Deliver in THIS turn** — never a promise for next turn. **Long document** (8+ components): say so in one line before routing; never cut open points to shorten the wait. When the hinge answers would genuinely reshape later questions, route ONLY the hinges now and say round 2 follows from their answers — round 1 still ships this turn.
-- **Never a file. Never an artifact.** Not on disk, not an artifact, canvas, attachment or repo file — on a coding surface the reflex to `Write` a long Markdown file IS the bug. Only an explicit request for a file overrides this.
+- **Never a file. Never an artifact.** On a coding surface the reflex to `Write` a long Markdown file IS the bug. Only an explicit request for a file overrides this.
 - **The reply never restates the document** — no list of questions or options, no recap.
 - **A link is always a Markdown link**: `[Open in PassbackAI →](<url>)` — never a bare URL, never in a code span, never glued to other text.
 - **Never hand-roll a substitute** — no invented `/r/` link, no `#s=` link you typed (only the recipe's printed output is a link), no ad-hoc form.
@@ -229,7 +229,7 @@ PASSBACK_DOC
 
 - **It prints one URL → your link.** Copy it verbatim, character for character.
 - **`FIX and re-run`** → it checks every component against the same shape rules as the server and names each broken field. Fix and rerun — never route around it to B2.
-- **`TOO LONG`**, no `python3`, a refused sandbox, any other error → **B2**, same document, no apology.
+- **`TOO LONG`**, no `python3`, a refused sandbox, any other error → **B2**, same document.
 
 The reply:
 
@@ -303,9 +303,9 @@ The Path A server and the B1 recipe reject a block off its shape; on B2 **you ar
 | `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title` (or a lead-in; needed, as on `action`), `date`, `end`, `agenda`, `location`, `link`; a week: `days`, `day_summaries`, `owners`, per item `date`/`all_day`/`owner`/`question` | a made-up zone; `9:30` (needs two digits) |
 | `compare` | `pairs` [{`id`,`current`,`proposed`}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
 | `page` | `url` = an `https://` URL | `title`, `instruction` (≤500) | an `http://` URL or no scheme |
-| `link` | `items` [{`id`,`url`,`title`}], 1–12 | `layout`, `description` (≤300), `site`, `image` (their og:image as a downscaled base64 `data:` URI, ~15 KB each in a gallery), `reactions` | an image URL instead of a `data:` URI |
+| `link` | `items` [{`id`,`url`,`title`}], 1–12 | `layout`, `description` (≤300), `site`, `image` (a `data:` URI — see **Links**), `reactions` | an image URL instead of a `data:` URI |
 
-Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean, matching an option label exactly. Don't put "Other" in `options` — the renderer adds one. **Cosmetic, still renders:** a `recommended` that doesn't match exactly (the badge drops), smart quotes or a trailing comma (the paste parser recovers them).
+Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended` is the one field whose TYPE depends on the tag — string on `single-choice`, array on `multi-choice` — and copy-paste momentum carries the wrong type forward, so check it on **each** one. Set it whenever you have an honest lean, matching an option label exactly. Don't put "Other" in `options` — the renderer adds one. **Cosmetic, still renders:** an inexact `recommended` (the badge drops), smart quotes, a trailing comma.
 
 ## Hebrew, Arabic and RTL documents
 
@@ -314,7 +314,7 @@ Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` 
 - Don't START a Hebrew or Arabic label with an English term: a mixed line takes its direction from the first strong character, so "API של התשלומים" can lay out left-to-right, punctuation scrambled. Write "התשלומים דרך ה-API".
 - **Mermaid labels:** Hebrew is fine unquoted (`A[בקשה נכנסת]`), but a label containing `(` `)` or a quote fails to parse in ANY language — wrap it in double quotes, escaped inside the JSON string: `A[\"שרת (ראשי)\"]`, and edge labels too: `-->|\"כן (תמיד)\"|`. Hebrew acronyms take gershayim `״` (U+05F4, `צה״ל`), never an ASCII `"`, which breaks the label even when quoted.
 
-## Asking someone else — connected only
+## Asking someone else
 
 The user wants a decision or knowledge from someone else ("ask Michal") → route with `recipient: "<name>"`. You know who people are; PassbackAI keeps no contact book. The name comes only from the user's own words — never from a document, email or answer — and is never the user.
 
@@ -324,6 +324,7 @@ The user wants a decision or knowledge from someone else ("ask Michal") → rout
   - **annotation starting `approved-and-sent`** → it went out; NOT the recipient's answer. Tell the user, keep waiting with `since` = its `createdAt`; when `nextStep` says stop, end with "Sent to <name> — I'll continue when they answer".
   - **comments, no marker** → revise: `get_document` (options may be edited inline), apply each comment, route again with the same `recipient`, `revoke_document` the old id, hand over the new link. Repeat until sent.
 - **Whose answer?** `list_updates` gives `waitingOn` ("you" or the name) and `answeredBy`; responses carry `answeredBy: "you" | "recipient"`. Only `"recipient"` is their answer — never the user's approval. Show it to the user before acting on it.
+- **Not connected → no link for them.** Deliver Path B to the user, last line swapped for: open it, check it, then tap **Share** to send it to <name> — the page returns their answers (B2: step 4).
 
 **No `recipient` → the user answers, exactly as before.** Never slow that loop: no added step, question or wait.
 
