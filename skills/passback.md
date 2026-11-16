@@ -5,9 +5,9 @@ license: Proprietary; free to install and use as-is. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.19"
+  version: "4.20"
   created: "05-05-2026"
-  updated: "2026-11-15"
+  updated: "2026-11-16"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -324,7 +324,7 @@ The user wants a decision or knowledge from someone else ("ask Michal") → rout
   - **annotation starting `approved-and-sent`** → it went out; NOT the recipient's answer. Tell the user, keep waiting with `since` = its `createdAt`; when `nextStep` says stop, end with "Sent to <name>. Once they answer, tell me and I'll continue."
   - **comments, no marker** → revise: `get_document` (options may be edited inline), apply each comment, route again with the same `recipient`, `revoke_document` the old id, hand over the new link. Repeat until sent.
 - **Whose answer?** `list_updates` gives `waitingOn` ("you" or the name) and `answeredBy`; responses carry `answeredBy: "you" | "recipient"`. Only `"recipient"` is their answer — never the user's approval. Show it to the user before acting on it.
-- **Not connected → no link for them.** Deliver Path B to the user, last line swapped for: open it, check it, then tap **Share** to send it to <name> — the page returns their answers (B2: step 4).
+- **Not connected → no link for them.** Deliver Path B to the user, last line swapped for: open it, check it, then tap **Share** to send it to <name> — their answers come back (B2: add as step 4).
 
 **No `recipient` → the user answers, exactly as before.** Never slow that loop: no added step, question or wait.
 
