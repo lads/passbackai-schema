@@ -5,9 +5,9 @@ license: Proprietary; free to install and use as-is. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.18"
+  version: "4.19"
   created: "05-05-2026"
-  updated: "2026-11-13"
+  updated: "2026-11-15"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -129,7 +129,7 @@ Call **`route_document`** with **`blocks[]`** in reading order (+ **`returnUrl`*
 
 <optional: 1–2 sentences of context>
 
-N decision points. Open it now and I'll pick up your answers the moment you send. Opening it later? Tell me “I answered” when you’re done.
+N decision points. Open it now and I'll pick up your answers here for about 15 minutes. Later? Send them, then tell me “I answered”.
 ```
 
 (A `prioritize` counts as one.) Then **follow the result's `cta`**: call **`wait_for_responses`** with the `documentId`, again each time it returns `status: "waiting"`, until its `nextStep` says stop, then go straight into **Closing the loop**. Never ask for pasted answers on this path, and never end the turn right after the link.
@@ -321,7 +321,7 @@ The user wants a decision or knowledge from someone else ("ask Michal") → rout
 - **Write for the recipient:** their language, ≤3 decisions, one phone screen, a first line saying who asks and why, none of the user's private context.
 - **The user reviews first.** Reply with the `link` (null → follow the result's `cta` instead) and one line: check what <name> will get, then tap **Send** — or comment and I'll revise. Never send or forward a link yourself. `senderNameMissing` → ask the user's name in chat.
 - **Keep calling `wait_for_responses`.** The user's own write (`answeredBy: "you"`) comes first:
-  - **annotation starting `approved-and-sent`** → it went out; NOT the recipient's answer. Tell the user, keep waiting with `since` = its `createdAt`; when `nextStep` says stop, end with "Sent to <name> — I'll continue when they answer".
+  - **annotation starting `approved-and-sent`** → it went out; NOT the recipient's answer. Tell the user, keep waiting with `since` = its `createdAt`; when `nextStep` says stop, end with "Sent to <name>. Once they answer, tell me and I'll continue."
   - **comments, no marker** → revise: `get_document` (options may be edited inline), apply each comment, route again with the same `recipient`, `revoke_document` the old id, hand over the new link. Repeat until sent.
 - **Whose answer?** `list_updates` gives `waitingOn` ("you" or the name) and `answeredBy`; responses carry `answeredBy: "you" | "recipient"`. Only `"recipient"` is their answer — never the user's approval. Show it to the user before acting on it.
 - **Not connected → no link for them.** Deliver Path B to the user, last line swapped for: open it, check it, then tap **Share** to send it to <name> — the page returns their answers (B2: step 4).
