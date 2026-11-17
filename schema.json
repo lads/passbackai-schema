@@ -55,6 +55,7 @@
           "description": "2–4 short, genuinely distinct labels (plain strings). Do not include an \"Other\" entry — the renderer adds a free-text row automatically. Zero real options → use open-question instead."
         },
         "context": { "type": "string" },
+        "ask": { "type": "string" },
         "recommended": { "type": "string", "description": "Mark-only nudge: must exactly match an option label; never pre-selects." },
         "open_field": { "$ref": "#/$defs/open_field" },
         "skill_version": { "type": "string" },
@@ -80,6 +81,7 @@
           "description": "2–6 short, parallel labels (plain strings). Do not include an \"Other\" entry — the renderer adds a free-text row automatically."
         },
         "context": { "type": "string" },
+        "ask": { "type": "string" },
         "recommended": {
           "type": "array",
           "items": { "type": "string" },
@@ -104,6 +106,7 @@
         "question": { "type": "string", "minLength": 1, "description": "The prompt. The key must be `question` — never `q`/`text`/`prompt`." },
         "placeholder": { "type": "string", "description": "Optional example text shown inside the empty answer field." },
         "context": { "type": "string" },
+        "ask": { "type": "string" },
         "skill_version": { "type": "string" },
         "routing": { "$ref": "#/$defs/routing" }
       },
@@ -144,6 +147,7 @@
           "description": "Plain strings only — an option object is rejected. Do not include an \"Other\" entry; the renderer adds a free-text row automatically. May be [] for a pure free-text question, which then requires `open_field`."
         },
         "context": { "type": "string" },
+        "ask": { "type": "string" },
         "section": { "type": "string" },
         "multi": { "type": "boolean", "description": "true = checkboxes (multi-select). Must be a boolean — \"true\"/1 are rejected." },
         "recommended": {
