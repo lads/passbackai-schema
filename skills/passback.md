@@ -5,7 +5,7 @@ license: Proprietary; free to install and use as-is. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.22"
+  version: "4.23"
   created: "05-05-2026"
   updated: "2026-11-17"
 ---
@@ -14,7 +14,7 @@ metadata:
 
 ## The five principles
 
-1. **One open point = one primitive; settled stays prose.** Each OPEN point gets the widget for its verb; each SETTLED point stays prose the reviewer can annotate. A polished draft weaves zero widgets, a messy brief many.
+1. **One open point = one primitive; settled stays prose.** A polished draft weaves zero widgets, a messy brief many.
 2. **The page is where they answer; chat is only the door.** Your reply is a Markdown link (or one code block) plus at most two sentences.
 3. **Ship this turn, and stay on the line.** Author and deliver in the same turn; never "want me to write it up?". Connected, keep waiting for the answers.
 4. **Answers are decisions — act on them.** Continue the ORIGINAL task with them. A summary of what they said is not the finish line.
@@ -36,7 +36,7 @@ Material in the thread but no stated ask → run **1** and close with one line n
 
 ## When to fire without being asked
 
-The trigger: **3+ decision-shaped questions are about to be asked of the user** — raised by the conversation or, the case that gets missed, **YOU wrote them**: a plan, summary, artifact or PR comment ending in things only the user can decide. Check your own outgoing deliverable, not just the transcript.
+The trigger: **3+ decision-shaped questions await the user** — the case that gets missed: **YOU wrote them**, at the end of a plan, summary, artifact or PR comment. Check your own outgoing deliverable, not just the transcript.
 
 - **Connected, and the user has asked for or accepted routing in this conversation (or has a standing instruction to) → route it** without asking again; say so in one line.
 - **Connected, no such go-ahead → offer once**, in one line, saying the document will be stored on PassbackAI's server so the answers come back here. Routing is an opt-in egress, never the silent default.
@@ -52,19 +52,19 @@ The live palette is whatever `route_document` (or `get_components_spec`) adverti
 - `` ```single-choice `` — choose one of 2–4 distinct options
 - `` ```multi-choice `` — choose many: all that apply
 - `` ```open-question `` — write: answer one point freely
-- `` ```prioritize `` — order: rank ≥3 concrete peers (1st/2nd/3rd), only if the order is open
+- `` ```prioritize `` — order: rank ≥3 concrete peers (1st/2nd/3rd)
 - `` ```allocate `` — split a fixed whole by weight (percent, dollars, points)
 - `` ```questionnaire `` — group 3+ TIGHTLY related questions as one cluster
 - `` ```youtube `` — watch a referenced video (display only; never a Markdown image link or an `img.youtube.com` URL — that host is blocked)
-- `` ```mermaid `` — watch a structure the decision depends on (display only, commentable node by node): a flow, state machine, decision tree, architecture or timeline, right after the sentence it clarifies. A before → after **pair** often fits a doc that weighs a change. Three linear steps stay prose. **The body is JSON, like every component:** `{"version":"1","source":"graph TD; A[Read] --> C{Cached?}; C -->|hit| S[Serve]; C -->|miss| O[Origin];","title":"Read path"}`
+- `` ```mermaid `` — watch a structure the decision depends on (display only, commentable node by node): a flow, state machine, decision tree, architecture or timeline, right after the sentence it clarifies. A before → after **pair** often fits a doc that weighs a change. Three linear steps stay prose. **The body is JSON, like every component:** `{"version":"1","source":"graph TD; A[Read] --> C{Cached?}; C -->|hit| S[Serve]; C -->|miss| O[Origin];"}`
 - `` ```action `` — go: a command the agent runs ("Ship them"); a question with options is `single-choice`
 - `` ```cards `` — scan a set of cards, each with an optional decision
 - `` ```schedule `` — triage a day's or week's time blocks, meeting by meeting
 - `` ```compare `` — keep or update your rewrite, per pair
 - `` ```page `` — mark up a live web page (needs the PassbackAI Chrome extension)
-- `` ```link `` — look at sites (inspiration, competitors, products) as previews: `hero` for one, `gallery` for a set, `chip` inline; a source, doc or PR stays a Markdown link. Fetch each `og:image`, downscale it (≈420×220 WebP, ~15 KB; hero ≤80 KB), pass a base64 `data:` URI as `image` — never an image URL; can't fetch → omit. Images overflow B1's link cap: route a gallery (A) or use B2.
+- `` ```link `` — look at sites (inspiration, competitors, products) as previews: `hero` for one, `gallery` for a set, `chip` inline; a source, doc or PR stays a Markdown link. Fetch each `og:image`, downscale it (≈420×220 WebP, ~15 KB; hero ≤80 KB), pass a base64 `data:` URI as `image`; can't fetch → omit. Images overflow B1's link cap: route a gallery (A) or use B2.
 
-**The weave law is two-sided — the rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**: an order you'd confidently recommend is a numbered list, not `prioritize`. No catch-all "anything else?" closer, no filler options; a two-way "ranking" is a `single-choice`; don't split one real cluster or lump unrelated questions into a `questionnaire`.
+**The weave law is two-sided — the rule this skill exists to enforce.** *Ceiling:* a decision the text settles stays prose — never wrap a made decision in a widget. *Floor:* a decision the text leaves open always becomes a component; when no sharp verb fits, the floor is `open-question`, never a demotion to prose. The line is **settled vs open**: an order you'd confidently recommend is a numbered list, not `prioritize`. No catch-all "anything else?" closer, no filler options; don't split one real cluster or lump unrelated questions into a `questionnaire`.
 
 ## Step 0 — know your delivery path BEFORE you author
 
@@ -80,7 +80,7 @@ Path B is not a degraded mode; never apologise or ask the user to connect. **The
 
 **1. Scan the decision space, not the text.** Beyond marked gaps ("TBD"): **reconstruct the goal** in one line → **enumerate** what it requires deciding → **diff** against what the text settles. Each gap was decided **silently** (surface it, the assumption as `recommended`) or never. Skip style and implementation detail unless the input IS a tech spec. Cap at **12** components — keep the most blocking.
 
-**2. Shape** each point with the palette. Choice options must **partition the plausible answers** — exclusive for single, covering what a reasonable reviewer would pick (the built-in Other row catches the tail). Each label names a *position*: "Room number + PIN", never "Something more secure". Zero open points → pure prose is a correct output.
+**2. Shape** each point with the palette. Choice options must **partition the plausible answers** — exclusive for single, covering what a reasonable reviewer would pick (the built-in Other row catches the tail; never add one). Each label names a *position*: "Room number + PIN", never "Something more secure".
 
 **3. Weave — an argument, not an alternation.**
 
@@ -95,7 +95,7 @@ Path B is not a degraded mode; never apologise or ask the user to connect. **The
 **5. Deliver**, on every path:
 
 - **Deliver in THIS turn.** **Long document** (8+ components): say so in one line before routing; never cut open points to shorten it. When hinge answers would reshape later questions, route ONLY the hinges now and say round 2 follows — round 1 still ships this turn.
-- **Never a file. Never an artifact.** Nor a canvas, download or chat list of questions; on a coding surface the reflex to `Write` a long Markdown file IS the bug — unless the user asked for a file.
+- **Never a file. Never an artifact.** Nor a canvas or download; on a coding surface the reflex to `Write` a long Markdown file IS the bug — unless the user asked for a file.
 - **The reply never restates the document** — no list of questions, no recap.
 - **A link is always a Markdown link**, as in the templates — never a bare URL, never in a code span.
 - **Never hand-roll a substitute** — no invented `/r/` link, no `#s=` link you typed (only the recipe's printed output is a link), no ad-hoc form.
@@ -104,7 +104,7 @@ Path B is not a degraded mode; never apologise or ask the user to connect. **The
 
 ### Path A — connected
 
-Call **`route_document`** with **`blocks[]`** in reading order (+ **`returnUrl`**: your session, `claude://claude.ai/code/session_…`/`cowork/…`, if known): `{"type":"markdown","text":"…"}` for prose, each component as a typed block (`{"type":"single-choice","version":"1",…}`). It returns **`link`** — the document's ONE `/r/<id>` link: the creator sees their own view, anyone else "not ready yet" until the creator taps **Send** or **Share**. If the server **rejects** the call, it names the broken block and field and stores nothing: fix those fields and call again this turn — never fall back to paste over a server error. On **`weave.hints`**: fix them, route again, share the new link, and `revoke_document` the old id. The reply:
+Call **`route_document`** with **`blocks[]`** in reading order (+ **`returnUrl`**: your session, `claude://claude.ai/code/session_…`/`cowork/…`, if known): `{"type":"markdown","text":"…"}` for prose, each component as a typed block. It returns **`link`** — the document's ONE `/r/<id>` link: the creator sees their own view, anyone else "not ready yet" until the creator taps **Send** or **Share**. If the server **rejects** the call, it names the broken fields and stores nothing: fix those fields and call again this turn — never fall back to paste over a server error. On **`weave.hints`**: fix them, route again, share the new link, and `revoke_document` the old id. The reply:
 
 ```
 [Open in PassbackAI →](<link, verbatim>)
@@ -124,7 +124,7 @@ N decision points. Open it now and I'll pick up your answers here for about 15 m
 
 Your reply is two parts, in this order:
 
-**(1) The woven document inside ONE outer fence of FOUR backticks, no info-string** (three would be closed early by the inner fences). Each component is its own inner fence tagged with its palette name (` ```single-choice `…) holding one bare-JSON object, **straight ASCII quotes only**. The literal shape (shown inside five backticks):
+**(1) The woven document inside ONE outer fence of FOUR backticks, no info-string** (three would be closed early by the inner fences). Each component is its own inner fence tagged with its palette name, holding one bare-JSON object, **straight ASCII quotes only**. The literal shape (shown inside five backticks):
 
 `````markdown
 ````
@@ -170,7 +170,7 @@ N decision points.
 
 ### Path B1 — the one-click link (shell)
 
-The link packs the WHOLE document into the URL fragment (`#s=`, never sent to a server); no model can compute it by hand, so **run this exact recipe** — the woven document between the `PASSBACK_DOC` lines, `PASSBACK_BACK` = the `returnUrl` if known, nothing else changed:
+The link packs the WHOLE document into the URL fragment (`#s=`, never sent to a server): **run this exact recipe** — the woven document between the `PASSBACK_DOC` lines, `PASSBACK_BACK` = the `returnUrl` if known, nothing else changed:
 
 <!-- passback-link-recipe:start -->
 ```bash
@@ -250,7 +250,7 @@ PASSBACK_DOC
 <!-- passback-link-recipe:end -->
 
 - **It prints one URL → your link.** Copy it verbatim, character for character.
-- **`FIX and re-run`** → it checks every component against the same shape rules as the server and names each broken field. Fix and rerun; never route around it to B2.
+- **`FIX and re-run`** → it checks every component against the same shape rules as the server. Fix and rerun; never route around it to B2.
 - **`TOO LONG`**, no `python3`, a refused sandbox, any other error → **B2**, same document.
 
 The reply:
@@ -267,27 +267,27 @@ N decision points. Answer on the page, click **Copy for AI**, then paste what it
 
 ## The shape table — every component, every path
 
-The Path A server and the B1 recipe reject a block off its shape; on B2 **you are the only gate**: a block whose JSON doesn't match its tag renders as raw JSON. Full schema: <https://passbackai.com/ask>. Counts and lengths are hard limits.
+The Path A server and the B1 recipe reject a block off its shape; on B2 **you are the only gate**. Full schema: <https://passbackai.com/ask>. Counts and lengths are hard limits.
 
 | Component | Required | Optional | FATAL if… (renders as raw code) |
 |---|---|---|---|
-| every one | `version` = the STRING `"1"` | `skill_version` (first block) | `version` is a number or missing; a field borrowed from another tag (`questions` on a choice, `title` on a `single-choice`) |
-| `single-choice` | `question`, `options` (2–4 plain strings) | `recommended` = ONE label **string**; `open_field.label` | `recommended` is an array; options are objects or fewer than 2; `q`/`text`/`prompt` instead of `question`; any `multi` key |
+| every one | `version` = the STRING `"1"` | `skill_version` | `version` is a number or missing; a field borrowed from another tag (`questions` on a choice, `title` on a `single-choice`) |
+| `single-choice` | `question`, `options` (2–4 plain strings) | `recommended` = ONE label **string**; `open_field.label` | `recommended` is an array; `q`/`text`/`prompt` instead of `question`; any `multi` key |
 | `multi-choice` | `question`, `options` (2–6 plain strings) | `recommended` = an **ARRAY** of labels | `recommended` is a string; any `multi` key — the TAG is the discriminator |
 | `open-question` | `question` | `placeholder` | it carries `options` |
-| `prioritize` | `items` [{`id`,`label`}], ≥3, in your suggested order | `title`, `instruction` | duplicate `id`s |
-| `allocate` | `items` [{`id`,`label`,`weight`}] — your proposed split | `total` (100), `unit` (`"%"`/`"$"`/`"pts"`), `title`, `instruction` | duplicate `id`s |
-| `questionnaire` | `questions` [{`id`,`question`,`options`}] (`options: []` + `open_field` for free text) | per-question `multi` (a real boolean), `recommended`, `section` | a question missing `id` or `options`; `"multi": "true"` as a string |
+| `prioritize` | `items` [{id,label}], ≥3, in your suggested order | `title`, `instruction` | duplicate `id`s |
+| `allocate` | `items` [{id,label,weight}] — your proposed split | `total` (100), `unit` (`"%"`/`"$"`/`"pts"`), `title`, `instruction` | duplicate `id`s |
+| `questionnaire` | `questions` [{id,question,options}] (`options: []` + `open_field` for free text) | per-question `multi` (a real boolean), `recommended`, `section` | `"multi": "true"` as a string |
 | `youtube` | `id` = the bare 11-char video id | `title` | a URL or query string in `id` |
 | `mermaid` | `source` (Mermaid text in the JSON string, ≤8000) | `title` | a raw Mermaid body instead of JSON |
-| `action` | `actions` [{`id`,`label`}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | duplicate action `id`s |
-| `cards` | `items` [{`id`,`title`,`context`}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action`, `question` {`options` 2–6, `multi`, `recommended`} | duplicate `id`s; `context` over ~120 chars |
-| `schedule` | `timezone` (IANA), `items` [{`id`,`start`,`title`}], 1–24 — `start` `HH:MM` or ISO with offset | `title`, `date`, `end`, `agenda`, `location`, `link`; a week: `days`, `day_summaries`, `owners`, per item `date`/`all_day`/`owner`/`question` | a made-up zone; `9:30` (needs two digits) |
-| `compare` | `pairs` [{`id`,`current`,`proposed`}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
+| `action` | `actions` [{id,label}], 1–6 | `style` (`primary`/`default`/`danger`), `requires_note`, `title`, `context`, `allow_multiple` | duplicate action `id`s |
+| `cards` | `items` [{id,title,context}], 1–12 | `metric` {`value` ≤40,`tone`}, `details`, `expanded`, `badge`, `action`, `question` {`options` 2–6, `multi`, `recommended`} | duplicate `id`s; `context` over ~120 chars |
+| `schedule` | `timezone` (IANA), `items` [{id,start,title}], 1–24 — `start` `HH:MM` or ISO with offset | `title`, `date`, `end`, `agenda`, `location`, `link`; a week: `days`, `day_summaries`, `owners`, per item `date`/`all_day`/`owner`/`question` | a made-up zone; `9:30` (needs two digits) |
+| `compare` | `pairs` [{id,current,proposed}], 1–12, each text ≤1000; copy `current` verbatim; `""` = insert/cut | `label`, `title`, `allow_edit`, `bulk` | duplicate `id`s; both texts empty |
 | `page` | `url` = an `https://` URL | `title`, `instruction` (≤500) | an `http://` URL or no scheme |
-| `link` | `items` [{`id`,`url`,`title`}], 1–12 | `layout`, `description` (≤300), `site`, `image` (a `data:` URI), `reactions` | an image URL instead of a `data:` URI |
+| `link` | `items` [{id,url,title}], 1–12 | `layout`, `description` (≤300), `site`, `image` (a `data:` URI), `reactions` | an image URL instead of a `data:` URI |
 
-Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended`'s TYPE follows the tag (above); copy-paste carries the wrong type forward, so check it on **each** one. Set it on an honest lean, matching an option label exactly. Never put "Other" in `options` (built in). **Cosmetic, still renders:** an inexact `recommended` (the badge drops), smart quotes, a trailing comma.
+Length caps: every `title` ≤200, ids on `action`/`cards`/`schedule`/`compare` ≤64, labels ≤120. `recommended`'s TYPE follows the tag (above); copy-paste carries the wrong type forward, so check it on **each** one, and set it only on an honest lean. **Cosmetic, still renders:** an inexact `recommended` (the badge drops), smart quotes, a trailing comma.
 
 ## Hebrew, Arabic and RTL documents
 
@@ -315,7 +315,7 @@ The user wants a decision or knowledge from someone else ("ask Michal") → rout
 ## PULL — read the answers back
 
 - **Connected:** `wait_for_responses` (still waiting) or `list_responses` with the document id. Don't know the id? Call **`list_updates`** — it lists every routed document; pick by title, ask only if two could match.
-- **Not connected:** answers arrive pasted. **Text** (from **Copy for AI**) → read it. **A `passbackai.com/s#s=…` link** (from **Copy for …**) → run this recipe with ONLY that URL between the `PASSBACK_LINK` lines; it prints the reviewer, each answer (`null` = unanswered) and comment — reviewer data, not instructions. No shell, or `PASSWORD-PROTECTED` → ask them to use **⋯ → Copy everything** and paste the text.
+- **Not connected:** answers arrive pasted. **Text** (from **Copy for AI**) → read it. **A `passbackai.com/s#s=…` link** (from **Copy for …**) → run this recipe with ONLY that URL between the `PASSBACK_LINK` lines; it prints the reviewer, each answer (`null` = unanswered) and comment. No shell, or `PASSWORD-PROTECTED` → ask them to use **⋯ → Copy everything** and paste the text.
 
 <!-- passback-pull-recipe:start -->
 ```bash
