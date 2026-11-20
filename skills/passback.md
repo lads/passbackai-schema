@@ -5,9 +5,9 @@ license: Proprietary; free to install and use as-is. See https://passbackai.com
 metadata:
   owner: Elad Diamant
   author: elad-diamant
-  version: "4.23"
+  version: "4.24"
   created: "05-05-2026"
-  updated: "2026-11-17"
+  updated: "2026-11-20"
 ---
 
 # /passback — externalize the open points, get a human's judgment, resume from it
@@ -238,9 +238,21 @@ for i,(t,b)in enumerate(re.findall(r"^```("+"|".join(list(D)[:14])+r")[ \t]*\n(.
   ck(x,t,"",o)
  if o:B.append("component %d (%s): %s"%(i,t,"; ".join(o)))
 if B:sys.exit("FIX and re-run -- "+" | ".join(B))
-k=base64.urlsafe_b64encode(gzip.compress(json.dumps({"markdown":d,"sharedBy":"captured-from-Claude"},ensure_ascii=False).encode(),9,mtime=0)).decode().rstrip("=")
+z=gzip.compress(json.dumps({"markdown":d,"sharedBy":"captured-from-Claude"},ensure_ascii=False).encode(),9,mtime=0)
+E=[1];L=[0]*256
+for i in range(254):x=E[-1]*2;E+=[x^285*(x>>8)]
+for i,x in enumerate(E):L[x]=i
+M=lambda a,b:a and b and E[(L[a]+L[b])%255]
+g=[1]
+for i in range(16):g=[a^M(b,E[i]) for a,b in zip(g+[0],[0]+g)]
+def P(c,r=[0]*16):
+ for v in c:f=v^r[0];r=[a^M(b,f) for a,b in zip(r[1:]+[0],g[1:])]
+ return r
+n=-(-len(z)//239);q,s=divmod(len(z),n);w=[0]*(len(z)+16*n);o=0
+for i in range(n):c=list(z[o:o+q+(i<s)]);o+=len(c);w[i::n]=c+P(c)
+k=base64.urlsafe_b64encode(bytes([3]+w)).decode().rstrip("=")
 if len(k)>30000:sys.exit("TOO LONG for a link -- deliver the code block")
-if json.loads(gzip.decompress(base64.urlsafe_b64decode(k+"==")))["markdown"]!=d:sys.exit("LINK CHECK")
+if json.loads(gzip.decompress(bytes(x for i in range(n) for x in base64.urlsafe_b64decode(k+"==")[1+i::n][:-16])))["markdown"]!=d:sys.exit("LINK CHECK")
 r=os.environ.get("PASSBACK_BACK")
 print("https://passbackai.com/s#s="+k+("&back="+quote(r,safe="")if r else""))
 ' <<'PASSBACK_DOC'
@@ -325,6 +337,7 @@ from collections import Counter
 m=re.search(r"#s=([A-Za-z0-9_-]+)",sys.stdin.read())
 if not m:sys.exit("NO #s= LINK -- ask for the link they copied")
 raw=base64.urlsafe_b64decode(m.group(1)+"="*(-len(m.group(1))%4))
+if raw[:1]==b"\x03":b=raw[1:];n=-(-len(b)//255);raw=bytes(x for k in range(n) for x in b[k::n][:-16])
 if raw[:2]!=b"\x1f\x8b":sys.exit("PASSWORD-PROTECTED -- ask them to use Copy instead")
 s=json.loads(gzip.decompress(raw))
 P={"questionnaire":"q","prioritize":"p","allocate":"a","single-choice":"sc","multi-choice":"mc","open-question":"oq","action":"ac","cards":"cd","schedule":"sch","compare":"cmp","page":"pg","link":"lk"}
